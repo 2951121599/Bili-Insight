@@ -1,5 +1,0 @@
-.vscode
-# 忽略.idea的所有文件
-*.idea
-# Ignore Mac system files
-.DS_store
