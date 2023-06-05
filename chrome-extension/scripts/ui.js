@@ -66,7 +66,7 @@ function getUserProfileCardDataHTML(data) {
                     <span class="idc-meta-item"><data-title>视频长度</data-title> ${secondsToDisplay(data["duration"])}</span>
                 </div>
             </div>
-            <div id="biliscope-tag-list">
+            <div id="biliscope-tag-list-bi">
             </div>
             <div class="idc-auth-description" style="${data["summary"] ? "" : "display: none"}">
                 <span style="display: flex">
@@ -81,11 +81,11 @@ function getUserProfileCardDataHTML(data) {
 function getUserProfileCardHTML(data) {
     return `
         <div id="biliscope-id-card" style="position: absolute;">
-            <div id="biliscope-id-card-data">
+            <div id="biliscope-id-card-data-bi">
                 ${getUserProfileCardDataHTML(data)}
             </div>
             <div id="word-cloud-canvas-wrapper">
-                <canvas id="word-cloud-canvas" style="width: 100%; height: 0"></canvas>
+                <canvas id="word-cloud-canvas-bi" style="width: 100%; height: 0"></canvas>
             </div>
         </div>
     `
@@ -122,7 +122,7 @@ UserProfileCard.prototype.disable = function () {
     this.data = {};
     if (this.el) {
         this.el.style.display = "none";
-        let canvas = document.getElementById("word-cloud-canvas");
+        let canvas = document.getElementById("word-cloud-canvas-bi");
         if (canvas) {
             canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
             canvas.parentNode.classList.remove("biliscope-canvas-show");
@@ -219,7 +219,7 @@ UserProfileCard.prototype.wordCloudMaxCount = function () {
 }
 
 UserProfileCard.prototype.drawVideoTags = function () {
-    let tagList = document.getElementById("biliscope-tag-list");
+    let tagList = document.getElementById("biliscope-tag-list-bi");
     tagList.innerHTML = "";
     if (this.data["video_type"]) {
         for (let d of this.data["video_type"]) {
@@ -255,7 +255,7 @@ UserProfileCard.prototype.updateData = function (data) {
     }
 
     if (data["api"] == "wordcloud") {
-        let canvas = document.getElementById("word-cloud-canvas");
+        let canvas = document.getElementById("word-cloud-canvas-bi");
         if (this.data["wordcloud"].length > 0) {
             canvas.style.height = `${canvas.offsetWidth / 2}px`;
             canvas.width = canvas.offsetWidth;
@@ -277,7 +277,7 @@ UserProfileCard.prototype.updateData = function (data) {
         }
     } else if (this.data['like']) {
         // wait until like is ready
-        document.getElementById("biliscope-id-card-data").innerHTML = getUserProfileCardDataHTML(this.data);
+        document.getElementById("biliscope-id-card-data-bi").innerHTML = getUserProfileCardDataHTML(this.data);
         this.drawVideoTags();
     }
 
