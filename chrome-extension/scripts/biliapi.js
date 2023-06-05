@@ -223,6 +223,7 @@ function updateUserInfo(userId, callback) {
                 if (subtitleUrl) {
                     // 标题和描述
                     // 云图
+                    updateUI(userId, callback, video)
                     chrome.runtime.sendMessage( //goes to bg_page.js
                         subtitleUrl,
                         (data) => {
