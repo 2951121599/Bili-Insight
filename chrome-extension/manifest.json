@@ -1,0 +1,48 @@
+{
+    "name": "Bili Insight",
+    "version": "0.0.0.1",
+    "manifest_version": 3,
+    "description": "Bili Insight,洞察B站视频内容插件.",
+    "icons": {
+        "16": "icons/bilipreview16x16.png"
+    },
+    "action": {
+        "default_popup": "popup/popup.html"
+    },
+    "content_scripts": [
+        {
+            "matches": [
+                "https://*.bilibili.com/*"
+            ],
+            "js": [
+                "scripts/constants.js",
+                "scripts/biliapi.js",
+                "scripts/note.js",
+                "scripts/ui.js",
+                "scripts/md5.js",
+                "scripts/stopwords.js",
+                "scripts/wordcloud2.min.js",
+                "content-scripts/content.js"
+            ],
+            "css": [
+                "css/idcard.css"
+            ]
+        }
+    ],
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "images/*.png"
+            ],
+            "matches": [
+                "<all_urls>"
+            ]
+        }
+    ],
+    "background": {
+        "scripts": [
+            "bg_page.js"
+        ],
+        "persistent": false
+    }
+}
