@@ -40,9 +40,7 @@
         }
     ],
     "background": {
-        "scripts": [
-            "bg_page.js"
-        ],
-        "persistent": false
+   
+        "service_worker": "bg_page.js"
     }
 }
