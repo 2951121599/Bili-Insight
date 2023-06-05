@@ -1,0 +1,80 @@
+#biliscope-id-card {
+    background: #fff;
+    box-shadow: 0 0 2px rgba(0,0,0,.3);
+    border-radius: 8px;
+    position: absolute;
+    z-index: 1002;
+    width: 375px;
+    line-height: 1.6;
+    overflow: hidden;
+}
+
+#biliscope-id-card * {
+    box-sizing: content-box;
+}
+
+#biliscope-id-card .d-none {
+    display: none;
+}
+
+#biliscope-id-card data-title {
+    color: #777;
+}
+
+
+#biliscope-id-card .idc-info {
+    padding: 7px 25px 10px 70px;
+    position: relative
+}
+
+
+#biliscope-id-card .idc-meta {
+    font-size: 12px;
+    margin-top: 4px
+}
+
+#biliscope-id-card .idc-meta-item {
+    margin-right: 20px
+}
+
+#biliscope-id-card .idc-tag-list {
+    display: none;
+    padding-bottom: 0
+}
+
+#biliscope-id-card .idc-auth-description {
+    line-height: 20px;
+    font-size: 12px;
+    margin-top: 4px;
+    color: #6d757a
+}
+
+#biliscope-id-card #biliscope-tag-list {
+    margin-top: 6px;
+    margin-bottom: 8px;
+}
+
+#biliscope-id-card .biliscope-badge {
+    color: white;
+    display: inline-block;
+    padding: 0px 10px;
+    line-height: 24px;
+    vertical-align: top;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 6px;
+    background-color: #00a1d6;
+    margin-right: 5px;
+}
+
+#word-cloud-canvas-wrapper {
+    height: 0px;
+    overflow: hidden;
+    transition-property: height, opacity;
+    transition-duration: .25s;
+    transition-timing-function: ease;
+}
+
+#word-cloud-canvas-wrapper.biliscope-canvas-show {
+    height: 187.5px;
+}

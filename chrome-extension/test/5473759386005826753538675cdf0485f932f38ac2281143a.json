@@ -1,0 +1,1370 @@
+{
+  "font_size": 0.4,
+  "font_color": "#FFFFFF",
+  "background_alpha": 0.5,
+  "background_color": "#9C27B0",
+  "Stroke": "none",
+  "type": "AIsubtitle",
+  "lang": "zh",
+  "version": "v1.4.0.4",
+  "body": [
+    {
+      "from": 0.2,
+      "to": 2.39,
+      "sid": 1,
+      "location": 2,
+      "content": "都说今年是5g的商用元年"
+    },
+    {
+      "from": 2.39,
+      "to": 4.25,
+      "sid": 2,
+      "location": 2,
+      "content": "但我一直都有点困惑"
+    },
+    {
+      "from": 4.25,
+      "to": 5.87,
+      "sid": 3,
+      "location": 2,
+      "content": "4g已经够快了"
+    },
+    {
+      "from": 5.87,
+      "to": 7.88,
+      "sid": 4,
+      "location": 2,
+      "content": "5g到底有什么用呢"
+    },
+    {
+      "from": 7.92,
+      "to": 9.42,
+      "sid": 5,
+      "location": 2,
+      "content": "为了探究这个问题"
+    },
+    {
+      "from": 9.42,
+      "to": 11.22,
+      "sid": 6,
+      "location": 2,
+      "content": "我报名oppo的5g星火计划"
+    },
+    {
+      "from": 11.22,
+      "to": 13.75,
+      "sid": 7,
+      "location": 2,
+      "content": "成功拿到了一台他们最新的oppo reno 5 g版"
+    },
+    {
+      "from": 13.75,
+      "to": 15.61,
+      "sid": 8,
+      "location": 2,
+      "content": "但是当下有5g天火的地方并不多"
+    },
+    {
+      "from": 15.61,
+      "to": 18.67,
+      "sid": 9,
+      "location": 2,
+      "content": "最好的体验机会就是5月十日就参与oppo的星火计划"
+    },
+    {
+      "from": 18.67,
+      "to": 19.21,
+      "sid": 10,
+      "location": 2,
+      "content": "开幕式"
+    },
+    {
+      "from": 19.21,
+      "to": 20.74,
+      "sid": 11,
+      "location": 2,
+      "content": "那里布置5g基站"
+    },
+    {
+      "from": 20.84,
+      "to": 22.1,
+      "sid": 12,
+      "location": 2,
+      "content": "但很巧的是"
+    },
+    {
+      "from": 22.1,
+      "to": 24.78,
+      "sid": 13,
+      "location": 2,
+      "content": "那天我期中考试"
+    },
+    {
+      "from": 26.02,
+      "to": 27.96,
+      "sid": 14,
+      "location": 2,
+      "content": "可我还是想体验一下5g的速度"
+    },
+    {
+      "from": 27.96,
+      "to": 28.71,
+      "sid": 15,
+      "location": 2,
+      "content": "往上一搜"
+    },
+    {
+      "from": 28.71,
+      "to": 34.04,
+      "sid": 16,
+      "location": 2,
+      "content": "发现有5g信号的地方有世园会金融街和北京邮电大学"
+    },
+    {
+      "from": 34.36,
+      "to": 35.26,
+      "sid": 17,
+      "location": 2,
+      "content": "这就很巧了"
+    },
+    {
+      "from": 35.26,
+      "to": 36.01,
+      "sid": 18,
+      "location": 2,
+      "content": "朋友们"
+    },
+    {
+      "from": 36.01,
+      "to": 40.08,
+      "sid": 19,
+      "location": 2,
+      "content": "我就在这儿上学呀"
+    },
+    {
+      "from": 40.88,
+      "to": 42.13,
+      "sid": 20,
+      "location": 2,
+      "content": "而这里解释一下"
+    },
+    {
+      "from": 42.13,
+      "to": 44.44,
+      "sid": 21,
+      "location": 2,
+      "content": "5g信号覆盖的是我们的稀土城校区"
+    },
+    {
+      "from": 44.44,
+      "to": 47.36,
+      "sid": 22,
+      "location": 2,
+      "content": "而我们大一大二都在30km外的沙河校区"
+    },
+    {
+      "from": 47.36,
+      "to": 50.36,
+      "sid": 23,
+      "location": 2,
+      "content": "所以我一下课就坐了校车来到了西土城"
+    },
+    {
+      "from": 50.36,
+      "to": 51.26,
+      "sid": 24,
+      "location": 2,
+      "content": "一进学校"
+    },
+    {
+      "from": 51.26,
+      "to": 53.48,
+      "sid": 25,
+      "location": 2,
+      "content": "这个高贵的符号便出现了"
+    },
+    {
+      "from": 53.62,
+      "to": 55.81,
+      "sid": 26,
+      "location": 2,
+      "content": "但是当我迫不及待的色素时"
+    },
+    {
+      "from": 55.81,
+      "to": 57.05,
+      "sid": 27,
+      "location": 2,
+      "content": "突然就懵了"
+    },
+    {
+      "from": 57.05,
+      "to": 60.14,
+      "sid": 28,
+      "location": 2,
+      "content": "这玩意儿难道比4g快很多吗"
+    },
+    {
+      "from": 60.14,
+      "to": 60.95,
+      "sid": 29,
+      "location": 2,
+      "content": "事实上"
+    },
+    {
+      "from": 60.95,
+      "to": 64.13,
+      "sid": 30,
+      "location": 2,
+      "content": "当我花了600兆流量在学校的各个地方测了十多次座"
+    },
+    {
+      "from": 64.13,
+      "to": 67.04,
+      "sid": 31,
+      "location": 2,
+      "content": "发现速度的确只有4g的水平"
+    },
+    {
+      "from": 67.04,
+      "to": 70.04,
+      "sid": 32,
+      "location": 2,
+      "content": "我试着下载了一些音乐和应用之类的东西"
+    },
+    {
+      "from": 70.04,
+      "to": 72.3,
+      "sid": 33,
+      "location": 2,
+      "content": "发现速度只有几兆每秒"
+    },
+    {
+      "from": 72.42,
+      "to": 73.71,
+      "sid": 34,
+      "location": 2,
+      "content": "在回去的路上"
+    },
+    {
+      "from": 73.71,
+      "to": 76.82,
+      "sid": 35,
+      "location": 2,
+      "content": "我不由得陷入了对人生和社会的大思考"
+    },
+    {
+      "from": 76.84,
+      "to": 79.69,
+      "sid": 36,
+      "location": 2,
+      "content": "所以我联系了学校信息化技术中心的老师"
+    },
+    {
+      "from": 79.69,
+      "to": 83.08,
+      "sid": 37,
+      "location": 2,
+      "content": "很巧的是那种联通正好在我们学校开个沟通会"
+    },
+    {
+      "from": 83.08,
+      "to": 84.6,
+      "sid": 38,
+      "location": 2,
+      "content": "老师就让我去了"
+    },
+    {
+      "from": 84.66,
+      "to": 85.74,
+      "sid": 39,
+      "location": 2,
+      "content": "更巧的是"
+    },
+    {
+      "from": 85.74,
+      "to": 88.39,
+      "sid": 40,
+      "location": 2,
+      "content": "刚好有个在联通的学长看过我的视频"
+    },
+    {
+      "from": 88.39,
+      "to": 90.01,
+      "sid": 41,
+      "location": 2,
+      "content": "他打天梯分后告诉我"
+    },
+    {
+      "from": 90.01,
+      "to": 93.22,
+      "sid": 42,
+      "location": 2,
+      "content": "我连不上5g是因为联通还在和学校进行测试"
+    },
+    {
+      "from": 93.22,
+      "to": 94.85,
+      "sid": 43,
+      "location": 2,
+      "content": "还未向用户开放"
+    },
+    {
+      "from": 94.85,
+      "to": 97.73,
+      "sid": 44,
+      "location": 2,
+      "content": "我实际上体验到的还是4g的速度啊"
+    },
+    {
+      "from": 97.73,
+      "to": 99.35,
+      "sid": 45,
+      "location": 2,
+      "content": "听到这里我心凉了半截"
+    },
+    {
+      "from": 99.35,
+      "to": 100.88,
+      "sid": 46,
+      "location": 2,
+      "content": "但是最巧的事情来了"
+    },
+    {
+      "from": 100.88,
+      "to": 103.42,
+      "sid": 47,
+      "location": 2,
+      "content": "测试预期在那周周五结束"
+    },
+    {
+      "from": 103.42,
+      "to": 104.32,
+      "sid": 48,
+      "location": 2,
+      "content": "顺利的话"
+    },
+    {
+      "from": 104.32,
+      "to": 106.03,
+      "sid": 49,
+      "location": 2,
+      "content": "周末就会开放"
+    },
+    {
+      "from": 106.03,
+      "to": 108.34,
+      "sid": 50,
+      "location": 2,
+      "content": "所以我又拿小车来到了西土城"
+    },
+    {
+      "from": 108.34,
+      "to": 109.46,
+      "sid": 51,
+      "location": 2,
+      "content": "而这次"
+    },
+    {
+      "from": 113.58,
+      "to": 114.84,
+      "sid": 52,
+      "location": 2,
+      "content": "i'm not a dummy"
+    },
+    {
+      "from": 114.84,
+      "to": 115.68,
+      "sid": 53,
+      "location": 2,
+      "content": "you were summon human"
+    },
+    {
+      "from": 115.68,
+      "to": 116.76,
+      "sid": 54,
+      "location": 2,
+      "content": "what i ta get it to you"
+    },
+    {
+      "from": 116.76,
+      "to": 117.3,
+      "sid": 55,
+      "location": 2,
+      "content": "unsuperhuman"
+    },
+    {
+      "from": 117.3,
+      "to": 117.66,
+      "sid": 56,
+      "location": 2,
+      "content": "innovative"
+    },
+    {
+      "from": 117.66,
+      "to": 118.32,
+      "sid": 57,
+      "location": 2,
+      "content": "and i made a ral"
+    },
+    {
+      "from": 118.32,
+      "to": 120.46,
+      "sid": 58,
+      "location": 2,
+      "content": "so that anything you can take a shit off for me in the"
+    },
+    {
+      "from": 120.46,
+      "to": 121.72,
+      "sid": 59,
+      "location": 2,
+      "content": "i'm never stating more than never demonstrating"
+    },
+    {
+      "from": 121.72,
+      "to": 122.86,
+      "sid": 60,
+      "location": 2,
+      "content": "how to give him all the fuking audience"
+    },
+    {
+      "from": 122.86,
+      "to": 123.82,
+      "sid": 61,
+      "location": 2,
+      "content": "a feeling like a seventeen"
+    },
+    {
+      "from": 128.54,
+      "to": 130.03,
+      "sid": 62,
+      "location": 2,
+      "content": "这玩意是真的快"
+    },
+    {
+      "from": 130.03,
+      "to": 132.96,
+      "sid": 63,
+      "location": 2,
+      "content": "平均下载速率700mb ps左右"
+    },
+    {
+      "from": 132.96,
+      "to": 134.74,
+      "sid": 64,
+      "location": 2,
+      "content": "上传在80左右"
+    },
+    {
+      "from": 134.74,
+      "to": 136.63,
+      "sid": 65,
+      "location": 2,
+      "content": "几乎是设计速度的十倍"
+    },
+    {
+      "from": 136.63,
+      "to": 138.82,
+      "sid": 66,
+      "location": 2,
+      "content": "还记不记得上次我测了十多次速"
+    },
+    {
+      "from": 138.82,
+      "to": 140.2,
+      "sid": 67,
+      "location": 2,
+      "content": "才花了600兆流量"
+    },
+    {
+      "from": 140.2,
+      "to": 143.92,
+      "sid": 68,
+      "location": 2,
+      "content": "5g测一次就得1000了啊"
+    },
+    {
+      "from": 143.92,
+      "to": 146.7,
+      "sid": 69,
+      "location": 2,
+      "content": "我一开始的时候还想下个程序看看下载速率"
+    },
+    {
+      "from": 146.7,
+      "to": 148.62,
+      "sid": 70,
+      "location": 2,
+      "content": "结果下一些生活类应用时"
+    },
+    {
+      "from": 148.62,
+      "to": 152.31,
+      "sid": 71,
+      "location": 2,
+      "content": "根本来不及到那个有速率的页面就已经下完了"
+    },
+    {
+      "from": 152.31,
+      "to": 153.99,
+      "sid": 72,
+      "location": 2,
+      "content": "之后下一次更大的游戏时"
+    },
+    {
+      "from": 153.99,
+      "to": 156.079,
+      "sid": 73,
+      "location": 2,
+      "content": "发现速度保持在60兆每秒左右"
+    },
+    {
+      "from": 156.079,
+      "to": 158.089,
+      "sid": 74,
+      "location": 2,
+      "content": "用5g下歌的体验更优秀"
+    },
+    {
+      "from": 158.089,
+      "to": 161.929,
+      "sid": 75,
+      "location": 2,
+      "content": "一首十兆的歌进度条只有全空和全满两种状态"
+    },
+    {
+      "from": 161.929,
+      "to": 163.81,
+      "sid": 76,
+      "location": 2,
+      "content": "根本就没有在中间呆过"
+    },
+    {
+      "from": 163.81,
+      "to": 166.09,
+      "sid": 77,
+      "location": 2,
+      "content": "在各个平台看最高码率的视频也可"
+    },
+    {
+      "from": 166.09,
+      "to": 168.34,
+      "sid": 78,
+      "location": 2,
+      "content": "以随便出进度条可缓存来看"
+    },
+    {
+      "from": 168.34,
+      "to": 169.74,
+      "sid": 79,
+      "location": 2,
+      "content": "几乎没有区别"
+    },
+    {
+      "from": 169.74,
+      "to": 172.68,
+      "sid": 80,
+      "location": 2,
+      "content": "玩游戏的延迟也稳定在60ms以下"
+    },
+    {
+      "from": 172.78,
+      "to": 176.59,
+      "sid": 81,
+      "location": 2,
+      "content": "在体验上唯一和4g甚至和3g一脉相承的"
+    },
+    {
+      "from": 176.59,
+      "to": 178.9,
+      "sid": 82,
+      "location": 2,
+      "content": "就只有没有开会员的百度云了啊"
+    },
+    {
+      "from": 178.9,
+      "to": 179.8,
+      "sid": 83,
+      "location": 2,
+      "content": "别说5g这玩意"
+    },
+    {
+      "from": 179.8,
+      "to": 181.46,
+      "sid": 84,
+      "location": 2,
+      "content": "5g上6g也没辙"
+    },
+    {
+      "from": 181.66,
+      "to": 182.56,
+      "sid": 85,
+      "location": 2,
+      "content": "体验了一整天"
+    },
+    {
+      "from": 182.56,
+      "to": 184.69,
+      "sid": 86,
+      "location": 2,
+      "content": "5g我最大的感受有两点"
+    },
+    {
+      "from": 184.69,
+      "to": 186.91,
+      "sid": 87,
+      "location": 2,
+      "content": "第一就是这玩意用起来是真的爽"
+    },
+    {
+      "from": 186.91,
+      "to": 190.38,
+      "sid": 88,
+      "location": 2,
+      "content": "5g的普及会极大的优化当下的网络体验"
+    },
+    {
+      "from": 190.48,
+      "to": 192.76,
+      "sid": 89,
+      "location": 2,
+      "content": "比如有时候你引上来想玩游戏"
+    },
+    {
+      "from": 192.76,
+      "to": 194.95,
+      "sid": 90,
+      "location": 2,
+      "content": "然后给你蹦出来一个300兆的更新"
+    },
+    {
+      "from": 194.95,
+      "to": 196.75,
+      "sid": 91,
+      "location": 2,
+      "content": "这种感觉是很难受的"
+    },
+    {
+      "from": 196.75,
+      "to": 198.19,
+      "sid": 92,
+      "location": 2,
+      "content": "但是在5g的速度下"
+    },
+    {
+      "from": 198.19,
+      "to": 201.5,
+      "sid": 93,
+      "location": 2,
+      "content": "下载更新包几乎和解压塔一样快"
+    },
+    {
+      "from": 201.5,
+      "to": 202.7,
+      "sid": 94,
+      "location": 2,
+      "content": "第二就是云存储肯定"
+    },
+    {
+      "from": 202.7,
+      "to": 203.84,
+      "sid": 95,
+      "location": 2,
+      "content": "是趋势小王"
+    },
+    {
+      "from": 203.84,
+      "to": 206.06,
+      "sid": 96,
+      "location": 2,
+      "content": "最快的时候下载速度有90兆每秒"
+    },
+    {
+      "from": 206.06,
+      "to": 208.69,
+      "sid": 97,
+      "location": 2,
+      "content": "已经快赶上手机里sd卡的读取速度了"
+    },
+    {
+      "from": 208.69,
+      "to": 209.95,
+      "sid": 98,
+      "location": 2,
+      "content": "这么快的网速下"
+    },
+    {
+      "from": 209.95,
+      "to": 212.35,
+      "sid": 99,
+      "location": 2,
+      "content": "你把照片和视频保存在本地看"
+    },
+    {
+      "from": 212.35,
+      "to": 213.7,
+      "sid": 100,
+      "location": 2,
+      "content": "还是上传到云端"
+    },
+    {
+      "from": 213.7,
+      "to": 215.43,
+      "sid": 101,
+      "location": 2,
+      "content": "需要的时候下载下来再看"
+    },
+    {
+      "from": 215.43,
+      "to": 217.2,
+      "sid": 102,
+      "location": 2,
+      "content": "几乎没有区别"
+    },
+    {
+      "from": 217.2,
+      "to": 219.03,
+      "sid": 103,
+      "location": 2,
+      "content": "如果说有什么遗憾的话"
+    },
+    {
+      "from": 219.03,
+      "to": 220.53,
+      "sid": 104,
+      "location": 2,
+      "content": "就是联通的朋友跟我说"
+    },
+    {
+      "from": 220.53,
+      "to": 222.98,
+      "sid": 105,
+      "location": 2,
+      "content": "现在大多数5g部署都采用nsa"
+    },
+    {
+      "from": 222.98,
+      "to": 224.87,
+      "sid": 106,
+      "location": 2,
+      "content": "也就是非独立组网架构"
+    },
+    {
+      "from": 224.87,
+      "to": 227.25,
+      "sid": 107,
+      "location": 2,
+      "content": "将来才会升级到sa架构"
+    },
+    {
+      "from": 227.25,
+      "to": 228.81,
+      "sid": 108,
+      "location": 2,
+      "content": "呃不是通信专业的朋友"
+    },
+    {
+      "from": 228.81,
+      "to": 230.13,
+      "sid": 109,
+      "location": 2,
+      "content": "可能听不懂我在说什么啊"
+    },
+    {
+      "from": 230.13,
+      "to": 231.7,
+      "sid": 110,
+      "location": 2,
+      "content": "呃其实我也听不懂"
+    },
+    {
+      "from": 231.7,
+      "to": 233.8,
+      "sid": 111,
+      "location": 2,
+      "content": "但是在升级后速度会更快"
+    },
+    {
+      "from": 233.8,
+      "to": 235.06,
+      "sid": 112,
+      "location": 2,
+      "content": "实验会更低"
+    },
+    {
+      "from": 235.06,
+      "to": 238.33,
+      "sid": 113,
+      "location": 2,
+      "content": "终于在对着测试软件傻笑了一天后"
+    },
+    {
+      "from": 238.33,
+      "to": 239.68,
+      "sid": 114,
+      "location": 2,
+      "content": "天色逐渐暗了下"
+    },
+    {
+      "from": 239.68,
+      "to": 244.02,
+      "sid": 115,
+      "location": 2,
+      "content": "来我对这个速度的兴奋感也逐渐变得平淡"
+    },
+    {
+      "from": 244.44,
+      "to": 245.82,
+      "sid": 116,
+      "location": 2,
+      "content": "在回去的路上"
+    },
+    {
+      "from": 245.82,
+      "to": 248.7,
+      "sid": 117,
+      "location": 2,
+      "content": "我还是陷入了对人生和社会的大思考"
+    },
+    {
+      "from": 248.7,
+      "to": 250.8,
+      "sid": 118,
+      "location": 2,
+      "content": "想想我们在手机上要做哪些"
+    },
+    {
+      "from": 250.8,
+      "to": 251.76,
+      "sid": 119,
+      "location": 2,
+      "content": "对网速有要求的"
+    },
+    {
+      "from": 251.76,
+      "to": 253.7,
+      "sid": 120,
+      "location": 2,
+      "content": "是无非就是看视频"
+    },
+    {
+      "from": 253.7,
+      "to": 254.76,
+      "sid": 121,
+      "location": 2,
+      "content": "玩游戏"
+    },
+    {
+      "from": 254.899,
+      "to": 258.229,
+      "sid": 122,
+      "location": 2,
+      "content": "但这些需求在4g下也得到了满足啊"
+    },
+    {
+      "from": 258.229,
+      "to": 260.029,
+      "sid": 123,
+      "location": 2,
+      "content": "用5g体验当然会更好"
+    },
+    {
+      "from": 260.029,
+      "to": 263.38,
+      "sid": 124,
+      "location": 2,
+      "content": "但总有些杀鸡用牛刀的感觉啊"
+    },
+    {
+      "from": 263.38,
+      "to": 265.8,
+      "sid": 125,
+      "location": 2,
+      "content": "有这种想法的网友也不在少数"
+    },
+    {
+      "from": 265.979,
+      "to": 266.909,
+      "sid": 126,
+      "location": 2,
+      "content": "事实上"
+    },
+    {
+      "from": 266.909,
+      "to": 269.099,
+      "sid": 127,
+      "location": 2,
+      "content": "从拿到这个手机的第一天开始"
+    },
+    {
+      "from": 269.099,
+      "to": 271.019,
+      "sid": 128,
+      "location": 2,
+      "content": "我们每天都会在网上搜我"
+    },
+    {
+      "from": 271.019,
+      "to": 272.699,
+      "sid": 129,
+      "location": 2,
+      "content": "这有什么用回答"
+    },
+    {
+      "from": 272.699,
+      "to": 275.789,
+      "sid": 130,
+      "location": 2,
+      "content": "你总是预测vr ar全民自动驾驶"
+    },
+    {
+      "from": 275.789,
+      "to": 276.839,
+      "sid": 131,
+      "location": 2,
+      "content": "万物互联"
+    },
+    {
+      "from": 276.839,
+      "to": 278.789,
+      "sid": 132,
+      "location": 2,
+      "content": "但这些听起来总是太遥远"
+    },
+    {
+      "from": 278.789,
+      "to": 280.4,
+      "sid": 133,
+      "location": 2,
+      "content": "实现起来太复杂"
+    },
+    {
+      "from": 280.599,
+      "to": 282.219,
+      "sid": 134,
+      "location": 2,
+      "content": "所以这次我换了一个"
+    },
+    {
+      "from": 282.219,
+      "to": 285.77,
+      "sid": 135,
+      "location": 2,
+      "content": "搜索方式我搜了一下4g有什么用"
+    },
+    {
+      "from": 285.77,
+      "to": 289.46,
+      "sid": 136,
+      "location": 2,
+      "content": "但是把时间限定在了2012年到2013年"
+    },
+    {
+      "from": 289.46,
+      "to": 292.1,
+      "sid": 137,
+      "location": 2,
+      "content": "也就是4g即将商用的时间"
+    },
+    {
+      "from": 292.1,
+      "to": 293.57,
+      "sid": 138,
+      "location": 2,
+      "content": "站在未来看"
+    },
+    {
+      "from": 293.57,
+      "to": 297.42,
+      "sid": 139,
+      "location": 2,
+      "content": "前人对现在的预测真的是很有趣的一件事情"
+    },
+    {
+      "from": 297.52,
+      "to": 300.37,
+      "sid": 140,
+      "location": 2,
+      "content": "当时大多数人都在抱怨4g没有什么用"
+    },
+    {
+      "from": 300.37,
+      "to": 301.63,
+      "sid": 141,
+      "location": 2,
+      "content": "资费还那么贵"
+    },
+    {
+      "from": 301.63,
+      "to": 303.19,
+      "sid": 142,
+      "location": 2,
+      "content": "而我那时候也是"
+    },
+    {
+      "from": 303.19,
+      "to": 304.6,
+      "sid": 143,
+      "location": 2,
+      "content": "但是5年过后"
+    },
+    {
+      "from": 304.6,
+      "to": 307.98,
+      "sid": 144,
+      "location": 2,
+      "content": "大多数人已经没有那种流量有什么用的意识了"
+    },
+    {
+      "from": 308.2,
+      "to": 312.85,
+      "sid": 145,
+      "location": 2,
+      "content": "而当年对4g应用的预测的确可以看见一些未来的端倪"
+    },
+    {
+      "from": 312.85,
+      "to": 315.36,
+      "sid": 146,
+      "location": 2,
+      "content": "但都有些太缺乏想象力了"
+    },
+    {
+      "from": 315.5,
+      "to": 318.17,
+      "sid": 147,
+      "location": 2,
+      "content": "比如都知道4g可以看高清视频"
+    },
+    {
+      "from": 318.17,
+      "to": 321.17,
+      "sid": 148,
+      "location": 2,
+      "content": "但是当时都在说用手机看电影有多方便"
+    },
+    {
+      "from": 321.17,
+      "to": 322.34,
+      "sid": 149,
+      "location": 2,
+      "content": "没有人预测到短"
+    },
+    {
+      "from": 322.34,
+      "to": 324.459,
+      "sid": 150,
+      "location": 2,
+      "content": "视频的彻底爆发啊"
+    },
+    {
+      "from": 324.459,
+      "to": 327.099,
+      "sid": 151,
+      "location": 2,
+      "content": "比如都知道4g有利于普及移动支付"
+    },
+    {
+      "from": 327.099,
+      "to": 331.2,
+      "sid": 152,
+      "location": 2,
+      "content": "但当时的理想方式是一个手机绑信用卡加上nfc"
+    },
+    {
+      "from": 331.36,
+      "to": 337.03,
+      "sid": 153,
+      "location": 2,
+      "content": "没有人想到靠着网络加二维码这么简单粗暴的方式真的就干掉了现金"
+    },
+    {
+      "from": 337.03,
+      "to": 340.52,
+      "sid": 154,
+      "location": 2,
+      "content": "比如都知道4g的上传速度可以视频直播了"
+    },
+    {
+      "from": 340.62,
+      "to": 343.92,
+      "sid": 155,
+      "location": 2,
+      "content": "但当时的设想是应用于专业的新闻领域"
+    },
+    {
+      "from": 343.92,
+      "to": 346.96,
+      "sid": 156,
+      "location": 2,
+      "content": "没有想到这个全民皆可直播时代的来临"
+    },
+    {
+      "from": 346.979,
+      "to": 350.7,
+      "sid": 157,
+      "location": 2,
+      "content": "更不用说还有各种电商外卖打车平台的兴起"
+    },
+    {
+      "from": 350.84,
+      "to": 352.58,
+      "sid": 158,
+      "location": 2,
+      "content": "在短短的5年里"
+    },
+    {
+      "from": 352.58,
+      "to": 357.6,
+      "sid": 159,
+      "location": 2,
+      "content": "4g和它催生的服务深刻地改变了我们每一个人的生活"
+    },
+    {
+      "from": 357.86,
+      "to": 359.21,
+      "sid": 160,
+      "location": 2,
+      "content": "好像在5年前"
+    },
+    {
+      "from": 359.21,
+      "to": 362.64,
+      "sid": 161,
+      "location": 2,
+      "content": "你可能是觉得哦网速是快一点是吧"
+    },
+    {
+      "from": 362.82,
+      "to": 363.42,
+      "sid": 162,
+      "location": 2,
+      "content": "人对"
+    },
+    {
+      "from": 363.42,
+      "to": 366.45,
+      "sid": 163,
+      "location": 2,
+      "content": "未来的预测都跳脱不出当下技术和思维的限制"
+    },
+    {
+      "from": 366.45,
+      "to": 368.19,
+      "sid": 164,
+      "location": 2,
+      "content": "最典型的例子就是"
+    },
+    {
+      "from": 368.19,
+      "to": 370.77,
+      "sid": 165,
+      "location": 2,
+      "content": "如果你问一个50年前的人未来什么样子"
+    },
+    {
+      "from": 370.77,
+      "to": 371.88,
+      "sid": 166,
+      "location": 2,
+      "content": "他可能会告诉你"
+    },
+    {
+      "from": 371.88,
+      "to": 373.26,
+      "sid": 167,
+      "location": 2,
+      "content": "汽车会在天上跑"
+    },
+    {
+      "from": 373.38,
+      "to": 374.67,
+      "sid": 168,
+      "location": 2,
+      "content": "50年过去了"
+    },
+    {
+      "from": 374.67,
+      "to": 375.93,
+      "sid": 169,
+      "location": 2,
+      "content": "汽车没有上天"
+    },
+    {
+      "from": 375.93,
+      "to": 378.24,
+      "sid": 170,
+      "location": 2,
+      "content": "但是计算机和信息技术的诞生"
+    },
+    {
+      "from": 378.24,
+      "to": 381.64,
+      "sid": 171,
+      "location": 2,
+      "content": "对社会的改变绝对不会比会飞的汽车更小"
+    },
+    {
+      "from": 381.92,
+      "to": 383.51,
+      "sid": 172,
+      "location": 2,
+      "content": "50年是如此"
+    },
+    {
+      "from": 383.51,
+      "to": 385.58,
+      "sid": 173,
+      "location": 2,
+      "content": "5年说不定也是如此"
+    },
+    {
+      "from": 385.58,
+      "to": 390.08,
+      "sid": 174,
+      "location": 2,
+      "content": "5年前大多数文章都没有预测到4g栽培出的移动互联网"
+    },
+    {
+      "from": 390.08,
+      "to": 391.52,
+      "sid": 175,
+      "location": 2,
+      "content": "这个参天大树"
+    },
+    {
+      "from": 391.659,
+      "to": 395.229,
+      "sid": 176,
+      "location": 2,
+      "content": "那么5g这片更肥沃的土壤里会开出怎样的花"
+    },
+    {
+      "from": 395.229,
+      "to": 398.58,
+      "sid": 177,
+      "location": 2,
+      "content": "我相信还是会超过所有人的预料"
+    },
+    {
+      "from": 398.84,
+      "to": 401.48,
+      "sid": 178,
+      "location": 2,
+      "content": "最近联通的朋友还带我去参观了一个有"
+    },
+    {
+      "from": 401.48,
+      "to": 402.44,
+      "sid": 179,
+      "location": 2,
+      "content": "关5g的展"
+    },
+    {
+      "from": 402.44,
+      "to": 404.92,
+      "sid": 180,
+      "location": 2,
+      "content": "看到了不少有意思的应用"
+    },
+    {
+      "from": 405.08,
+      "to": 409.22,
+      "sid": 181,
+      "location": 2,
+      "content": "我现在最大的期望就是当我5年后再打开这个视频"
+    },
+    {
+      "from": 409.22,
+      "to": 413.5,
+      "sid": 182,
+      "location": 2,
+      "content": "会发现速度其实是5g最无聊的应用"
+    },
+    {
+      "from": 414.96,
+      "to": 416.3,
+      "sid": 183,
+      "location": 2,
+      "content": "ok我视频的全部内容啦"
+    },
+    {
+      "from": 416.3,
+      "to": 417.98,
+      "sid": 184,
+      "location": 2,
+      "content": "非常感谢你能看到这里啊"
+    },
+    {
+      "from": 417.98,
+      "to": 419.72,
+      "sid": 185,
+      "location": 2,
+      "content": "当然更要感谢中国联通的朋友"
+    },
+    {
+      "from": 419.72,
+      "to": 421.22,
+      "sid": 186,
+      "location": 2,
+      "content": "在北京邮电大学"
+    },
+    {
+      "from": 421.22,
+      "to": 422.9,
+      "sid": 187,
+      "location": 2,
+      "content": "如果你这个视频做的不错的话"
+    },
+    {
+      "from": 422.9,
+      "to": 423.44,
+      "sid": 188,
+      "location": 2,
+      "content": "求赞求收藏"
+    },
+    {
+      "from": 423.44,
+      "to": 424.1,
+      "sid": 189,
+      "location": 2,
+      "content": "全品是转发"
+    },
+    {
+      "from": 424.1,
+      "to": 425.24,
+      "sid": 190,
+      "location": 2,
+      "content": "就是哪个大大的关注"
+    },
+    {
+      "from": 425.24,
+      "to": 427.77,
+      "sid": 191,
+      "location": 2,
+      "content": "各位的支持就是做视频的最大动力啊"
+    },
+    {
+      "from": 427.77,
+      "to": 429.03,
+      "sid": 192,
+      "location": 2,
+      "content": "最近要高考了呃"
+    },
+    {
+      "from": 429.03,
+      "to": 432.76,
+      "sid": 193,
+      "location": 2,
+      "content": "就就祝各位高考的朋友都能考出一个理想的成绩"
+    },
+    {
+      "from": 432.76,
+      "to": 435.88,
+      "sid": 194,
+      "location": 2,
+      "content": "ok各位我们下期再见嗯"
+    }
+  ]
+}
