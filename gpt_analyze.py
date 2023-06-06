@@ -1,9 +1,12 @@
 # -*- coding:utf-8 -*-
+import os
+
 from langchain import OpenAI
 from langchain import PromptTemplate
 from langchain.docstore.document import Document
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.chains.summarize import load_summarize_chain
+from openai.error import AuthenticationError
 
 
 def analyze_by_3p5(text):
@@ -14,7 +17,7 @@ def analyze_by_3p5(text):
     """
     try:
         # 使用 OpenAI API 密钥创建 OpenAI 对象
-        openai_api_key = "sk-xxx"
+        openai_api_key = os.getenv('OPENAI_API_KEY')
         llm = OpenAI(temperature=0, model_name="gpt-3.5-turbo", openai_api_key=openai_api_key)
 
         # 初始化文本分割器，在较小的块中处理大量文本，用于分割文本的字符（这里是“。”），指定每个块的大小为2000。
@@ -49,8 +52,12 @@ def analyze_by_3p5(text):
         review = chain({"input_documents": docs}, return_only_outputs=True)
         # 返回 GPT-3.5 生成的文本摘要
         return review["output_text"]
+
+    except AuthenticationError as e:
+        print("OpenAI API authentication error:", e.json_body)
+        return None
     except Exception as e:
-        print("OpenAI API authentication error:", e)
+        print("Summary error:", e)
         return None
 
 
