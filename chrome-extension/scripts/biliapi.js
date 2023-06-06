@@ -287,7 +287,7 @@ function updateUI(userId, callback, video) {
                 "share": videoData["stat"]["share"],
                 "pubdate": videoData["pubdate"],
                 "duration": videoData["duration"],
-                "summary": videoData["desc"]
+                "summary": videoData["desc"] ? videoData["desc"] : videoData["title"]
             }
         })
     }

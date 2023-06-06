@@ -275,8 +275,8 @@ UserProfileCard.prototype.updateData = function (data) {
             canvas.style.height = "0px";
             canvas.height = 0;
         }
-    } else if (this.data['like']) {
-        // wait until like is ready
+    } else if (this.data['duration']) {
+        // if has duration
         document.getElementById("biliscope-id-card-data-bi").innerHTML = getUserProfileCardDataHTML(this.data);
         this.drawVideoTags();
     }
