@@ -165,8 +165,7 @@ function updateVideoData(userId, callback, videoData) {
     let map = new Map();
     map.set("word", new Map());
     map.set("type", new Map());
-    map.set("lastMonthVideoCount", 0);
-    map.set("totalVideoLength", 0);
+
 
     // requestSearchPage(userId, 1, map).then((data) => {
     data = requestSearchPage(userId, 1, map, videoData)
@@ -225,7 +224,10 @@ function updateUserInfo(userId, callback) {
                     // 云图
                     updateUI(userId, callback, video)
                     chrome.runtime.sendMessage( //goes to bg_page.js
-                        subtitleUrl,
+                        JSON.stringify({
+                            type: 'subtitleUrl',
+                            url: subtitleUrl,
+                        }),
                         (data) => {
                             let rawSubTitles = data["body"]
                             var rawTranscript = []
@@ -254,17 +256,42 @@ function updateUserInfo(userId, callback) {
 
 function updateUI(userId, callback, video) {
     let videoData = video
-    cacheAndUpdate(callback, userId, "info", {
-        data: {
-            "like": videoData["stat"]["like"],
-            "coin": videoData["stat"]["coin"],
-            "favorite": videoData["stat"]["favorite"],
-            "share": videoData["stat"]["share"],
-            "pubdate": videoData["pubdate"],
-            "duration": videoData["duration"],
-            "summary": '总结：' + videoData["desc"]
-        }
-    })
+
+    if (video.transcript) {
+        chrome.runtime.sendMessage( //goes to bg_page.js
+            JSON.stringify({
+                type: 'summary',
+                text: video.transcript,
+            }),
+            (data) => {
+                cacheAndUpdate(callback, userId, "info", {
+                    data: {
+                        "like": videoData["stat"]["like"],
+                        "coin": videoData["stat"]["coin"],
+                        "favorite": videoData["stat"]["favorite"],
+                        "share": videoData["stat"]["share"],
+                        "pubdate": videoData["pubdate"],
+                        "duration": videoData["duration"],
+                        "summary": data.summary
+                    }
+                })
+
+            } //your callback
+        );
+    } else {
+        cacheAndUpdate(callback, userId, "info", {
+            data: {
+                "like": videoData["stat"]["like"],
+                "coin": videoData["stat"]["coin"],
+                "favorite": videoData["stat"]["favorite"],
+                "share": videoData["stat"]["share"],
+                "pubdate": videoData["pubdate"],
+                "duration": videoData["duration"],
+                "summary": videoData["desc"]
+            }
+        })
+    }
+
 
     updateVideoData(userId, callback, videoData);
 }

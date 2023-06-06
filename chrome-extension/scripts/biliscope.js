@@ -139,7 +139,7 @@ cacheAndUpdate((data) => userProfileCard.updateData(data), userId, "info", {
         "share": videoData["stat"]["share"],
         "pubdate": videoData["pubdate"],
         "duration": videoData["duration"],
-        "summary": '总结：' + videoData["desc"]
+        "summary": videoData["desc"]
     }
 })
 

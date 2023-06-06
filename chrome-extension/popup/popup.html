@@ -1,23 +1,76 @@
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <title>Bili Insight</title>
-    </head>
-    <body>
-        Bili Insight,洞察B站视频内容插件
-        <div>
-            <img src="/images/bilipreview.png" alt="B站预览,Bili Preview." />
-        </div>
-        作者
-        <ul>
-            <li>崔腾松（Taylor）</li>
-            <li>吴晓明（不拿好成绩不改名）</li>
-            <li>陈德港（fate）</li>
-            <li>王强（wangq-wx）</li>
-            <li>王东荣（残剑）</li>
-            <li>朱恒璟(猪横井)</li>
-        </ul>
 
-        <script src="popup.js"></script>
-    </body>
+<head>
+    <meta charset="UTF-8" />
+    <title>Bili Insight</title>
+</head>
+
+<body style="padding: 20px 100px;">
+    <h1>B站视频内容总结预览插件：通过使用这个插件来更快地了解视频的内容。</h1>
+    <p >
+
+        用户是 B 站的视频观众，他们希望通过使用这个插件来更好地理解视频的内容。
+
+        当浏览B站时，把鼠标悬停至视频标题时，插件会自动展示内容总结，通过词云/思维导图等方式以可视化的形式呈现给用户，方便用户快速了解视频内容。
+
+        * up主视频字幕、标题、简介、tag生成的内容总结
+    </p>
+    <div>
+        <img src="/images/insight.png" width="600px" alt="Bili Insight,洞察B站视频内容插件." />
+    </div>
+
+
+    <h3>
+        作者
+    </h3>
+    <table>
+        <thead>
+            <th>任务</th>
+            <th>负责人</th>
+            <th>任务类型</th>
+        </thead>
+        <tbody>
+            <tr>
+                <td>产品定义、项目管理 </td>
+                <td>崔腾松（Taylor）</td>
+                <td>产品设计、项目管理</td>
+            </tr>
+            <tr>
+                <td>字幕下载、格式处理、高频词统计、前端页面设计</td>
+                <td>王强</td>
+                <td>前端、产品设计</td>
+            </tr>
+            <tr>
+                <td>Prompt优化、模型调用</td>
+                <td>陈德港、梁嘉文</td>
+                <td>模型、Prompt</td>
+            </tr>
+            <tr>
+                <td>搭建后端框架、定义接口</td>
+                <td>吴晓明</td>
+                <td>后端框架</td>
+            </tr>
+            <tr>
+                <td>数据库存储及缓存设计</td>
+                <td>朱恒璟</td>
+                <td>数据库</td>
+            </tr>
+        </tbody>
+
+    </table>
+    <h3>
+        参考资料
+    </h3>
+    <ul>
+        <li><a href="https://github.com/JimmyLv/BibiGPT">吕立青：BiliGPT</a></li>
+
+        <li> <a href="https://github.com/gaogaotiantian/biliscope">插件：让你瞬间了解B站UP主</a></li>
+
+        <li><a href="https://github.com/the1812/Bilibili-Evolved">Bilibili-Evolved</a></li>
+    </ul>
+
+
+    <script src="popup.js"></script>
+</body>
+
 </html>

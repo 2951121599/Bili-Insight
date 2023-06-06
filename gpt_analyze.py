@@ -1,4 +1,5 @@
 # -*- coding:utf-8 -*-
+import logging
 import os
 
 from langchain import OpenAI
@@ -57,7 +58,7 @@ def analyze_by_3p5(text):
         print("OpenAI API authentication error:", e.json_body)
         return None
     except Exception as e:
-        print("Summary error:", e)
+        logging.error("Summary error:",  exc_info=True)
         return None
 
 

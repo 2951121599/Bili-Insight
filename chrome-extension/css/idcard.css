@@ -23,7 +23,7 @@
 
 
 #biliscope-id-card .idc-info {
-    padding: 7px 25px 10px 70px;
+    padding: 7px 35px 10px 40px;
     position: relative
 }
 
@@ -49,7 +49,7 @@
     color: #6d757a
 }
 
-#biliscope-id-card #biliscope-tag-list {
+#biliscope-id-card #biliscope-tag-list-bi {
     margin-top: 6px;
     margin-bottom: 8px;
 }

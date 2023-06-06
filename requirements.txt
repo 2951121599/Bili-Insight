@@ -1,2 +1,4 @@
 openai==0.27.7
 langchain==0.0.166
+fastapi==0.96.0
+uvicorn==0.22.0

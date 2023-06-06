@@ -70,7 +70,7 @@ function getUserProfileCardDataHTML(data) {
             </div>
             <div class="idc-auth-description" style="${data["summary"] ? "" : "display: none"}">
                 <span style="display: flex">
-                ${data["summary"]}
+                总结: ${data["summary"]}
                 </span>
             </div>
         </div>
