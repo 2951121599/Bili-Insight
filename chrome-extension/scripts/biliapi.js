@@ -234,7 +234,7 @@ function updateUserInfo(userId, callback) {
                             rawSubTitles.forEach(element => {
                                 rawTranscript.push(element["content"])
                             });
-                            let longText = rawTranscript.join(" ")
+                            let longText = rawTranscript.join("\n")
                             video.transcript = longText
                             updateUI(userId, callback, video)
 

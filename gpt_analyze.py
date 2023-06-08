@@ -4,9 +4,9 @@ import os
 
 from langchain import OpenAI
 from langchain import PromptTemplate
-from langchain.docstore.document import Document
-from langchain.text_splitter import CharacterTextSplitter
 from langchain.chains.summarize import load_summarize_chain
+from langchain.docstore.document import Document
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 from openai.error import AuthenticationError
 
 
@@ -17,12 +17,9 @@ def analyze_by_3p5(text):
     :return: 分析结果
     """
     try:
-        # 使用 OpenAI API 密钥创建 OpenAI 对象
-        openai_api_key = os.getenv('OPENAI_API_KEY')
-        llm = OpenAI(temperature=0, model_name="gpt-3.5-turbo", openai_api_key=openai_api_key)
 
-        # 初始化文本分割器，在较小的块中处理大量文本，用于分割文本的字符（这里是“。”），指定每个块的大小为2000。
-        text_splitter = CharacterTextSplitter(separator="。", chunk_size=2000, chunk_overlap=0)
+        # 初始化文本分割器，指定每个块的大小为2000。
+        text_splitter = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=0)
         # 切分文本
         texts = text_splitter.split_text(text)
         # 使用 Document 类创建文档对象
@@ -45,6 +42,9 @@ def analyze_by_3p5(text):
             "If the context isn't useful, return the original summary."
         )
         refine_prompt = PromptTemplate(input_variables=["existing_answer", "text"], template=refine_template)
+        # 使用 OpenAI API 密钥创建 OpenAI 对象
+        openai_api_key = os.getenv('OPENAI_API_KEY')
+        llm = OpenAI(temperature=0, model_name="gpt-3.5-turbo", openai_api_key=openai_api_key)
 
         # 加载总结和完善模型链，并向其提供刚才定义的两个模板字符串作为问题和细化问题的提示。
         chain = load_summarize_chain(llm, chain_type="refine", return_intermediate_steps=True,
@@ -58,7 +58,7 @@ def analyze_by_3p5(text):
         print("OpenAI API authentication error:", e.json_body)
         return None
     except Exception as e:
-        logging.error("Summary error:",  exc_info=True)
+        logging.error("Summary error:", exc_info=True)
         return None
 
 
