@@ -144,9 +144,9 @@ function requestSearchPage(userId, pn, map, video) {
     if (data["code"] == 0) {
         for (let v of data["data"]["list"]["vlist"]) {
 
-            if (v["transcript"]) {
-                updateWordMap(map, v["desc"], 2);
-                updateWordMap(map, v["transcript"], 1);
+            if (v["summary"]) {
+                updateWordMap(map, v["desc"], 1);
+                updateWordMap(map, v["summary"], 1);
             } else {
                 updateWordMap(map, v["title"], 1);
                 updateWordMap(map, v["desc"], 1);
@@ -275,7 +275,7 @@ function updateUI(userId, callback, video) {
                         "summary": data.summary
                     }
                 })
-
+                updateVideoData(userId, callback, videoData);
             } //your callback
         );
     } else {
@@ -290,8 +290,9 @@ function updateUI(userId, callback, video) {
                 "summary": videoData["desc"] ? videoData["desc"] : videoData["title"]
             }
         })
+        updateVideoData(userId, callback, videoData);
     }
 
 
-    updateVideoData(userId, callback, videoData);
+
 }
