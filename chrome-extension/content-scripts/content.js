@@ -61,6 +61,9 @@ function getTarget(target) {
             if (videoLink.tagName == "DIV" && videoLink.classList.contains("bili-video-card__wrap")) {
                 return videoLink;
             }
+            if (videoLink.tagName == "DIV" && videoLink.classList.contains("small-item") && videoLink.classList.contains("fakeDanmu-item")) {
+                return videoLink;
+            }
 
         }
     }
