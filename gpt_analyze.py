@@ -10,10 +10,11 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from openai.error import AuthenticationError
 
 
-def analyze_by_3p5(text):
+def analyze_by_3p5(text, api_key=None):
     """
     使用 GPT-3.5 模型分析总结文本
     :param text: 文本
+    param api_key: apikey from openai
     :return: 分析结果
     """
     try:
@@ -43,7 +44,10 @@ def analyze_by_3p5(text):
         )
         refine_prompt = PromptTemplate(input_variables=["existing_answer", "text"], template=refine_template)
         # 使用 OpenAI API 密钥创建 OpenAI 对象
-        openai_api_key = os.getenv('OPENAI_API_KEY')
+        if api_key is None:
+            openai_api_key = os.getenv('OPENAI_API_KEY')
+        else:
+            openai_api_key = api_key
         llm = OpenAI(temperature=0, model_name="gpt-3.5-turbo", openai_api_key=openai_api_key)
 
         # 加载总结和完善模型链，并向其提供刚才定义的两个模板字符串作为问题和细化问题的提示。

@@ -1,9 +1,10 @@
 # Bili-Insight
 
 Bili Insight，洞察B站视频内容Chrome插件。它可以让你不用点开视频，更快地了解视频的总结内容。
-
-## 功能
-
+<p align="center">
+    • 🤗 <a href="https://huggingface.co/spaces/yfor/Bili-Insight" target="_blank">HF Space</a>
+    • 📺 <a href="https://www.bilibili.com/video/BV1KV4y1S7Rw/" target="_blank">介绍视频</a> 
+</p>
 用户是 B 站的视频观众，他们希望通过使用这个插件来更好地理解视频的内容。
 
 当浏览B站时，把鼠标悬停至视频或标题时，插件会自动展示内容总结，通过词云/思维导图等方式以可视化的形式呈现给用户，方便用户快速了解视频内容。
