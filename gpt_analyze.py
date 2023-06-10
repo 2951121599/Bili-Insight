@@ -14,7 +14,7 @@ def analyze_by_3p5(text, api_key=None):
     """
     使用 GPT-3.5 模型分析总结文本
     :param text: 文本
-    param api_key: apikey from openai
+    :param api_key: apikey from openai
     :return: 分析结果
     """
     try:

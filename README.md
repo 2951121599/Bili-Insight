@@ -1,6 +1,6 @@
 # Bili-Insight
 
-Bili Insight，洞察B站视频内容Chrome插件。它可以让你不用点开视频，更快地了解视频的总结内容。
+Bili Insight，借助GPT洞察B站视频内容Chrome插件。它可以让你不用点开视频，更快地了解视频的总结内容。
 <p align="center">
     • 🤗 <a href="https://huggingface.co/spaces/yfor/Bili-Insight" target="_blank">HF Space</a>
     • 📺 <a href="https://www.bilibili.com/video/BV1KV4y1S7Rw/" target="_blank">介绍视频</a> 
@@ -19,13 +19,13 @@ Bili Insight，洞察B站视频内容Chrome插件。它可以让你不用点开�
 
 
 ## 参与贡献者
-|                     任务                     |     负责人     |      任务类型      |  状态  |  开始时间  |  结束时间  |
-| :------------------------------------------: | :------------: | :----------------: | :----: | :--------: | :--------: |
-|              产品定义、项目管理              |     [崔腾松](https://github.com/2951121599)     | 产品设计、项目管理 | 进行中 | 2023/06/01 | 2023/06/09 |
-| 字幕下载、格式处理、高频词统计、前端页面设计 |      [王强](https://github.com/wangqmshf)      |   前端、产品设计   | 进行中 | 2023/06/03 | 2023/06/09 |
-|             Prompt优化、模型调用             | [陈德港](https://github.com/cdggdc)、[梁嘉文](https://github.com/tangruofeng) |    模型、Prompt    | 进行中 | 2023/06/03 | 2023/06/09 |
-|            搭建后端框架、定义接口            |     [吴晓明](https://github.com/xlight5)     |      后端框架      | 进行中 | 2023/06/03 | 2023/06/09 |
-|             数据库存储及缓存设计             |     [朱恒璟](https://github.com/hengjingzhu)     |       数据库       | 进行中 | 2023/06/03 | 2023/06/09 |
+|                     任务                     |     负责人     |        任务类型         | 状态  |  开始时间  |  结束时间  |
+| :------------------------------------------: | :------------: |:-------------------:|:---:| :--------: | :--------: |
+|              产品定义、项目管理              |     [崔腾松](https://github.com/2951121599)     |      产品设计、项目管理      | 测试中 | 2023/06/01 | 2023/06/09 |
+| 字幕下载、格式处理、高频词统计、前端页面设计 |      [王强](https://github.com/wangqmshf)      |   前端浏览器插件开发、产品设计    | 测试中 | 2023/06/03 | 2023/06/09 |
+|             Prompt优化、模型调用             | [陈德港](https://github.com/cdggdc)、[梁嘉文](https://github.com/tangruofeng) | 模型、Prompt、Langchain | 完成  | 2023/06/03 | 2023/06/09 |
+|            搭建后端框架、定义接口            |     [吴晓明](https://github.com/xlight5)     |        后端框架         | 完成 | 2023/06/03 | 2023/06/09 |
+|             数据库存储及缓存设计             |     [朱恒璟](https://github.com/hengjingzhu)     |        数据库部署        | 完成 | 2023/06/03 | 2023/06/09 |
 
 
 ## 设计
@@ -35,17 +35,17 @@ sequenceDiagram
     participant 浏览器
     participant B站
 
-    用户->>+浏览器: 鼠标B站悬浮视频上
+    用户->>+浏览器: 鼠标悬浮在B站视频上
     浏览器->>+B站: 查询视频信息
     B站->>+浏览器: 返回视频信息
     浏览器->>用户: 展示视频信息
     浏览器->>字幕网站: 查询字幕信息
     字幕网站->>+浏览器: 返回字幕信息
-    浏览器->>+后端（langchain）: 请求总结字幕
-    后端（langchain）->>+openai: ChatGPT接口
-    openai->>+后端（langchain）: 总结字幕结果
-    后端（langchain）->>+浏览器: 总结字幕结果
-    浏览器->>用户: 展示视频信息（字幕）
+    浏览器->>+后端（Langchain）: 请求总结字幕
+    后端（Langchain）->>+openai: ChatGPT接口
+    openai->>+后端（Langchain）: 总结字幕结果
+    后端（Langchain）->>+浏览器: 总结字幕结果
+    浏览器->>用户: 展示视频信息（字幕总结）
 ```
 ### Refine链
 ![截图](img/refine_chain.png)

@@ -1,16 +1,13 @@
 import gradio as gr
 from gpt_analyze import analyze_by_3p5
 
-
-def greet(context, api_key):
-    return analyze_by_3p5(context, api_key)
-
-
-iface = gr.Interface(fn=greet, inputs=[
+iface = gr.Interface(fn=analyze_by_3p5, inputs=[
     gr.components.Textbox(label='Your text',
                           lines=5,
+                          placeholder='Long text need to be short',
                           max_lines=100),
-    gr.components.Textbox(label='openai api',
+    gr.components.Textbox(label='api key',
+                          placeholder='apikey from openai',
                           type="password")
 ], outputs="text")
 iface.launch(share=True)
