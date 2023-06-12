@@ -39,6 +39,10 @@
             ]
         }
     ],
+    "author": "wangqmshf@hotmail.com",
+    "permissions": [
+        "storage"
+    ],
     "background": {
         "service_worker": "bg_page.js"
     }

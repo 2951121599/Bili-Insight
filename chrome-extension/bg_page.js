@@ -20,15 +20,42 @@ function getSubtitleUrl(data, onSuccess) {
 }
 
 function getSummary(data, onSuccess) {
-    fetch('http://127.0.0.1:8000/', {
-        method: "POST", // or 'PUT'
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            text: data.text
+
+    chrome.storage.sync.get({
+        "enableWordCloud": true,
+        "apiKey": '',
+        minSize: 5
+    }, function (items) {
+        // fetch('http://127.0.0.1:8000/', {
+        //     method: "POST", // or 'PUT'
+        //     headers: {
+        //         "Content-Type": "application/json",
+        //     },
+        //     body: JSON.stringify({
+        //         text: data.text,
+        //         apiKey: items.apiKey ? items.apiKey : ''
+        //     })
+        // })
+        //     .then(response => response.json())
+        //     .then(responseText => onSuccess(responseText))
+
+        fetch('https://yfor-bili-insight.hf.space/run/predict', {
+            method: "POST", // or 'PUT'
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                "data": [
+                    data.text,
+                    items.apiKey ? items.apiKey : ''
+                ]
+            }
+            )
         })
-    })
-        .then(response => response.json())
-        .then(responseText => onSuccess(responseText))
+            .then(response => response.json())
+            .then(responseText => onSuccess({
+                "summary": responseText["data"][0]
+            }))
+    });
+
 }

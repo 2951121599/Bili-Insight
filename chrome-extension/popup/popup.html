@@ -3,11 +3,20 @@
 <head>
     <meta charset="UTF-8" />
     <title>Bili Insight</title>
+    <link rel="stylesheet" href="./options.css">
 </head>
 
 <body style="padding: 20px 100px;">
     <h1>B站视频内容总结预览插件：通过使用这个插件来更快地了解视频的内容。</h1>
-    <p >
+    <div class="item">
+        <label for="api-key">apikey:</label>
+        <input type="password" id="api-key" style="width: 300px;">
+    </div>
+    <div id="status" class="item"></div>
+    <div class="item">
+        <button id="save" class="btn btn-primary">保存</button>
+    </div>
+    <p>
 
         用户是 B 站的视频观众，他们希望通过使用这个插件来更好地理解视频的内容。
 
@@ -15,6 +24,7 @@
 
         * up主视频字幕、标题、简介、tag生成的内容总结
     </p>
+
     <div>
         <img src="/images/insight.png" width="600px" alt="Bili Insight,洞察B站视频内容插件." />
     </div>

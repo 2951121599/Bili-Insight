@@ -44,10 +44,10 @@ def analyze_by_3p5(text, api_key=None):
         )
         refine_prompt = PromptTemplate(input_variables=["existing_answer", "text"], template=refine_template)
         # 使用 OpenAI API 密钥创建 OpenAI 对象
-        if api_key is None:
-            openai_api_key = os.getenv('OPENAI_API_KEY')
-        else:
+        if api_key:
             openai_api_key = api_key
+        else:
+            openai_api_key = os.getenv('OPENAI_API_KEY')
         llm = OpenAI(temperature=0, model_name="gpt-3.5-turbo", openai_api_key=openai_api_key)
 
         # 加载总结和完善模型链，并向其提供刚才定义的两个模板字符串作为问题和细化问题的提示。
@@ -60,10 +60,10 @@ def analyze_by_3p5(text, api_key=None):
 
     except AuthenticationError as e:
         print("OpenAI API authentication error:", e.json_body)
-        return None
+        return "请检查apikey"
     except Exception as e:
         logging.error("Summary error:", exc_info=True)
-        return None
+        return "生成总结出错"
 
 
 if __name__ == '__main__':

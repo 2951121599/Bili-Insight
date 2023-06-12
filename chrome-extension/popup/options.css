@@ -1,0 +1,61 @@
+button {
+    padding: 5px 10px;
+    border-width: 0px;
+    border-radius: 3px;
+    background: #1E90FF;
+    cursor: pointer;
+    outline: none;
+    color: white;
+    font-size: 14px;
+}
+
+.item {
+    padding: 4px 0;
+}
+
+.btn-primary {
+    color: #fff;
+    background-color: #2196f3;
+    border-color: transparent;
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    -webkit-appearance: none !important;
+}
+
+label {
+    font-size: 14px;
+}
+
+input[type="number"] {
+    -moz-appearance: textfield;
+    box-sizing: border-box;
+}
+
+.btn {
+    display: inline-block;
+    margin-bottom: 0;
+    font-weight: normal;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;
+    touch-action: manipulation;
+    cursor: pointer;
+    background-image: none;
+    border: 1px solid transparent;
+    padding: 0 16px;
+    height: 32px;
+    font-size: 13px;
+    border-radius: 3px;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+#status {
+    height: 24px;
+    font-size: 14px;
+    color: green;
+}

@@ -26,13 +26,33 @@ async def create_item(request: Request):
     json_post_list = json.loads(json_post)
 
     text = json_post_list.get('text')
+    api_key = json_post_list.get('apiKey')
     logging.info('input %s', text)
-    summary_text = analyze_by_3p5(text)
+    summary_text = analyze_by_3p5(text, api_key)
     # summary_text = "x"
     logging.info('summary %s', summary_text)
     logging.info('input length %s,summary length %s', len(text), len(summary_text))
     response = {
         "summary": summary_text
+    }
+    return response
+
+
+@app.post("/run/predict")
+async def predict(request: Request):
+    json_post_raw = await request.json()
+    json_post = json.dumps(json_post_raw)
+    json_post_list = json.loads(json_post)
+    data = json_post_list.get('data')
+    text = data[0]
+    api_key = data[1]
+    logging.info('input %s', text)
+    summary_text = analyze_by_3p5(text, api_key)
+    # summary_text = "x"
+    logging.info('summary %s', summary_text)
+    logging.info('input length %s,summary length %s', len(text), len(summary_text))
+    response = {
+        "data": [summary_text]
     }
     return response
 
