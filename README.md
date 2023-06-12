@@ -41,17 +41,20 @@ sequenceDiagram
     浏览器->>用户: 展示视频信息
     浏览器->>字幕网站: 查询字幕信息
     字幕网站->>+浏览器: 返回字幕信息
-    浏览器->>+后端（Langchain）: 请求总结字幕
-    后端（Langchain）->>+openai: ChatGPT接口
-    openai->>+后端（Langchain）: 总结字幕结果
-    后端（Langchain）->>+浏览器: 总结字幕结果
+    浏览器->>+后端/HuggingFace（Langchain）: 请求总结字幕
+    后端/HuggingFace（Langchain）->>+openai: ChatGPT接口
+    openai->>+后端/HuggingFace（Langchain）: 总结字幕结果
+    后端/HuggingFace（Langchain）->>+浏览器: 总结字幕结果
     浏览器->>用户: 展示视频信息（字幕总结）
 ```
-### Refine链
+### Refine链原理
 ![截图](img/refine_chain.png)
 
-### 配置
+### 插件配置apikey
 ![截图](img/options.png)
+
+### huggingface部署
+![截图](img/huggingface.png)
 
 ## 参考资料
 * [吕立青：BiliGPT](https://github.com/JimmyLv/BibiGPT)
