@@ -15,8 +15,10 @@ Bili Insight，借助GPT洞察B站视频内容Chrome插件。它可以让你不�
 * up主视频的内容总结。默认为视频简介。待请求完成后，会替换为视频内容总结
 * up主视频字幕、标题、简介、tag生成的词云
 ## 示例
-![截图](chrome-extension/images/insight.png)
+![GIF](chrome-extension/images/insight.png)
 
+## 使用演示
+![截图](img/view_demo.gif)
 
 ## 参与贡献者
 |                     任务                     |     负责人     |        任务类型         | 状态  |  开始时间  |  结束时间  |
