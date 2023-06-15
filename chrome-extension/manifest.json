@@ -17,7 +17,6 @@
             "js": [
                 "scripts/constants.js",
                 "scripts/biliapi.js",
-                "scripts/note.js",
                 "scripts/ui.js",
                 "scripts/md5.js",
                 "scripts/stopwords.js",
