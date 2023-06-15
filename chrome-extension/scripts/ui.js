@@ -48,7 +48,7 @@ function secondsToDisplay(sec) {
 
 
 
-function getUserProfileCardDataHTML(data) {
+function getVideoProfileCardDataHTML(data) {
     return `
         <div class="idc-info clearfix">
 
@@ -66,9 +66,9 @@ function getUserProfileCardDataHTML(data) {
                     <span class="idc-meta-item"><data-title>视频长度</data-title> ${secondsToDisplay(data["duration"])}</span>
                 </div>
             </div>
-            <div id="biliscope-tag-list-bi">
+            <div id="tag-list-bi">
             </div>
-            <div class="idc-auth-description" style="${data["summary"] ? "" : "display: none"}">
+            <div class="description" style="${data["summary"] ? "" : "display: none"}">
                 <span style="display: flex">
                 总结: ${data["summary"]}
                 </span>
@@ -78,11 +78,11 @@ function getUserProfileCardDataHTML(data) {
 }
 
 
-function getUserProfileCardHTML(data) {
+function getVideoProfileCardHTML(data) {
     return `
-        <div id="biliscope-id-card" style="position: absolute;">
-            <div id="biliscope-id-card-data-bi">
-                ${getUserProfileCardDataHTML(data)}
+        <div id="biliinsight-video-card" style="position: absolute;">
+            <div id="biliinsight-video-card-data-bi">
+                ${getVideoProfileCardDataHTML(data)}
             </div>
             <div id="word-cloud-canvas-wrapper">
                 <canvas id="word-cloud-canvas-bi" style="width: 100%; height: 0"></canvas>
@@ -91,8 +91,8 @@ function getUserProfileCardHTML(data) {
     `
 }
 
-function UserProfileCard() {
-    this.userId = null;
+function VideoProfileCard() {
+    this.videoId = null;
     this.data = {};
     this.cursorX = 0;
     this.cursorY = 0;
@@ -102,7 +102,7 @@ function UserProfileCard() {
     this.el = document.createElement("div");
     this.el.style.position = "absolute";
     this.el.style.display = "none";
-    this.el.innerHTML = getUserProfileCardHTML(this.data);
+    this.el.innerHTML = getVideoProfileCardHTML(this.data);
     this.el.addEventListener("transitionend", () => {
         this.updateCursor(this.cursorX, this.cursorY);
     })
@@ -116,8 +116,8 @@ function UserProfileCard() {
     document.body.appendChild(this.el);
 }
 
-UserProfileCard.prototype.disable = function () {
-    this.userId = null;
+VideoProfileCard.prototype.disable = function () {
+    this.videoId = null;
     this.enabled = false;
     this.data = {};
     if (this.el) {
@@ -125,13 +125,13 @@ UserProfileCard.prototype.disable = function () {
         let canvas = document.getElementById("word-cloud-canvas-bi");
         if (canvas) {
             canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
-            canvas.parentNode.classList.remove("biliscope-canvas-show");
+            canvas.parentNode.classList.remove("canvas-show");
         }
         this.idCardObserver.disconnect();
     }
 }
 
-UserProfileCard.prototype.enable = function () {
+VideoProfileCard.prototype.enable = function () {
     if (!this.enabled) {
         this.enabled = true;
         this.idCardObserver.observe(document.body, {
@@ -143,7 +143,7 @@ UserProfileCard.prototype.enable = function () {
     return false;
 }
 
-UserProfileCard.prototype.checkTargetValid = function (target) {
+VideoProfileCard.prototype.checkTargetValid = function (target) {
     if (this.enabled && this.target) {
         while (target) {
             if (target == this.target) {
@@ -155,7 +155,7 @@ UserProfileCard.prototype.checkTargetValid = function (target) {
     }
 }
 
-UserProfileCard.prototype.clearOriginalCard = function () {
+VideoProfileCard.prototype.clearOriginalCard = function () {
     while (document.getElementById("id-card")) {
         document.getElementById("id-card").remove();
     }
@@ -169,11 +169,11 @@ UserProfileCard.prototype.clearOriginalCard = function () {
     }
 }
 
-UserProfileCard.prototype.updateUserId = function (userId) {
-    this.userId = userId;
+VideoProfileCard.prototype.updateVideoId = function (videoId) {
+    this.videoId = videoId;
 }
 
-UserProfileCard.prototype.updateCursor = function (cursorX, cursorY) {
+VideoProfileCard.prototype.updateCursor = function (cursorX, cursorY) {
     const cursorPadding = 10;
     const windowPadding = 20;
 
@@ -205,7 +205,7 @@ UserProfileCard.prototype.updateCursor = function (cursorX, cursorY) {
     }
 }
 
-UserProfileCard.prototype.updateTarget = function (target) {
+VideoProfileCard.prototype.updateTarget = function (target) {
     this.target = target;
     upc = this
     this.target.addEventListener("mouseleave", function leaveHandle(ev) {
@@ -214,18 +214,18 @@ UserProfileCard.prototype.updateTarget = function (target) {
     })
 }
 
-UserProfileCard.prototype.wordCloudMaxCount = function () {
+VideoProfileCard.prototype.wordCloudMaxCount = function () {
     return Math.max(...this.data["wordcloud"].map(item => item[1]))
 }
 
-UserProfileCard.prototype.drawVideoTags = function () {
-    let tagList = document.getElementById("biliscope-tag-list-bi");
+VideoProfileCard.prototype.drawVideoTags = function () {
+    let tagList = document.getElementById("tag-list-bi");
     tagList.innerHTML = "";
     if (this.data["video_type"]) {
         for (let d of this.data["video_type"]) {
             if (BILIBILI_VIDEO_TYPE_MAP[d[0]]) {
                 let el = document.createElement("span");
-                el.className = "biliscope-badge";
+                el.className = "badge";
                 el.innerHTML = BILIBILI_VIDEO_TYPE_MAP[d[0]];
                 tagList.appendChild(el);
             }
@@ -233,11 +233,11 @@ UserProfileCard.prototype.drawVideoTags = function () {
     }
 }
 
-UserProfileCard.prototype.updateData = function (data) {
+VideoProfileCard.prototype.updateData = function (data) {
     let uid = data["uid"];
     let d = data["payload"];
 
-    if (uid != this.userId) {
+    if (uid != this.videoId) {
         return;
     }
 
@@ -261,14 +261,14 @@ UserProfileCard.prototype.updateData = function (data) {
             canvas.width = canvas.offsetWidth;
             canvas.height = canvas.offsetHeight;
 
-            canvas.parentNode.classList.add("biliscope-canvas-show");
+            canvas.parentNode.classList.add("canvas-show");
 
             WordCloud(canvas, {
                 list: JSON.parse(JSON.stringify(this.data["wordcloud"])),
                 backgroundColor: "transparent",
                 weightFactor: 100 / this.wordCloudMaxCount(),
                 shrinkToFit: true,
-                minSize: biliScopeOptions.minSize
+                minSize: biliInsightOptions.minSize
             });
             this.drawVideoTags();
         } else {
@@ -277,7 +277,7 @@ UserProfileCard.prototype.updateData = function (data) {
         }
     } else if (this.data['duration']) {
         // if has duration
-        document.getElementById("biliscope-id-card-data-bi").innerHTML = getUserProfileCardDataHTML(this.data);
+        document.getElementById("biliinsight-video-card-data-bi").innerHTML = getVideoProfileCardDataHTML(this.data);
         this.drawVideoTags();
     }
 
@@ -290,7 +290,7 @@ UserProfileCard.prototype.updateData = function (data) {
 }
 
 
-userProfileCard = new UserProfileCard();
+videoProfileCard = new VideoProfileCard();
 
 
 
