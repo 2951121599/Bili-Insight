@@ -1,9 +1,16 @@
 # Bili-Insight
 
+<div align="center">
+    <img src="img/Bili-Insight-1.png" width=20%>
+</div>
+
 Bili Insight，借助GPT洞察B站视频内容Chrome插件。它可以让你不用点开视频，更快地了解视频的总结内容。
 <p align="center">
-    • 🤗 <a href="https://huggingface.co/spaces/yfor/Bili-Insight" target="_blank">HF Space</a>
-    • 📺 <a href="https://www.bilibili.com/video/BV1KV4y1S7Rw/" target="_blank">介绍视频</a> 
+    • 🤗 <a href="https://huggingface.co/spaces/yfor/Bili-Insight" target="_blank"> Huggingface Space</a>
+    • 📺 <a href="https://b23.tv/P9ao5bc" target="_blank">介绍视频1</a>
+    • 📺 <a href="https://www.bilibili.com/video/BV1KV4y1S7Rw/" target="_blank">介绍视频2</a> 
+    • 📑 <a href="https://emoumcwvfx.feishu.cn/docx/FUNYdH8ClolsBjxrEm3crZt0nTh" target="_blank">项目规划文档</a> 
+    
 </p>
 用户是 B 站的视频观众，他们希望通过使用这个插件来更好地理解视频的内容。
 
@@ -15,17 +22,18 @@ Bili Insight，借助GPT洞察B站视频内容Chrome插件。它可以让你不�
 * up主视频的内容总结。默认为视频简介。待请求完成后，会替换为视频内容总结
 * up主视频字幕、标题、简介、tag生成的词云
 ## 示例
-![截图](chrome-extension/images/insight.png)
+![GIF](chrome-extension/images/insight.png)
 
+## 使用演示
+![截图](img/view_demo.gif)
 
 ## 参与贡献者
 |                     任务                     |     负责人     |        任务类型         | 状态  |  开始时间  |  结束时间  |
 | :------------------------------------------: | :------------: |:-------------------:|:---:| :--------: | :--------: |
-|              产品定义、项目管理              |     [崔腾松](https://github.com/2951121599)     |      产品设计、项目管理      | 完成 | 2023/06/01 | 2023/06/09 |
-| 字幕下载、格式处理、高频词统计、前端页面设计 |      [王强](https://github.com/wangqmshf)      |   前端浏览器插件开发、产品设计    | 完成 | 2023/06/03 | 2023/06/09 |
-|             Prompt优化、模型调用             | [陈德港](https://github.com/cdggdc)、[梁嘉文](https://github.com/tangruofeng) | 模型、Prompt、Langchain | 完成  | 2023/06/03 | 2023/06/09 |
-|            搭建后端框架、定义接口            |     [吴晓明](https://github.com/xlight5)     |        后端框架         | 完成 | 2023/06/03 | 2023/06/09 |
-|             数据库存储及缓存设计             |     [朱恒璟](https://github.com/hengjingzhu)     |        数据库部署        | 完成 | 2023/06/03 | 2023/06/09 |
+|              产品定义、项目管理              |     [崔腾松](https://github.com/2951121599)     |      产品设计、项目管理      | 完成 | 2023/06/01 | 2023/06/12 |
+| 字幕下载、格式处理、高频词统计、前端页面设计 |      [王强](https://github.com/wangqmshf)      |   浏览器插件前后端开发、产品设计    | 完成 | 2023/06/03 | 2023/06/12 |
+|             Prompt优化、模型调用             | [陈德港](https://github.com/cdggdc)<br/>[梁嘉文](https://github.com/tangruofeng) | 模型、Prompt、Langchain | 完成  | 2023/06/03 | 2023/06/09 |
+|             数据库存储及缓存设计             |     [朱恒璟](https://github.com/hengjingzhu)     |        数据库部署        | 完成 | 2023/06/03 | 2023/06/12 |
 
 
 ## 设计
@@ -50,10 +58,7 @@ sequenceDiagram
 ### Refine链原理
 ![截图](img/refine_chain.png)
 
-### 插件配置apikey
-![截图](img/options.png)
-
-### huggingface部署
+###  Huggingface部署
 ![截图](img/huggingface.png)
 
 ## 参考资料
