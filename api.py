@@ -40,6 +40,9 @@ async def create_item(request: Request):
 
 @app.post("/run/predict")
 async def predict(request: Request):
+    """
+    mock the gradio rest api
+    """
     json_post_raw = await request.json()
     json_post = json.dumps(json_post_raw)
     json_post_list = json.loads(json_post)

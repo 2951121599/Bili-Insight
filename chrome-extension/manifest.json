@@ -1,10 +1,10 @@
 {
     "name": "Bili Insight，洞察B站视频内容插件",
-    "version": "0.0.2",
+    "version": "0.3.1",
     "manifest_version": 3,
     "description": "Bili Insight，通过使用这个插件来更快地了解视频的内容。当浏览B站时，把鼠标悬停至视频或标题时，插件会自动展示内容总结，通过词云/思维导图等方式以可视化的形式呈现给用户，方便用户快速了解视频内容。",
     "icons": {
-        "16": "icons/bilip_insight16x16.png"
+        "16": "icons/bili_insight_16x16.png"
     },
     "action": {
         "default_popup": "popup/popup.html"
@@ -17,7 +17,6 @@
             "js": [
                 "scripts/constants.js",
                 "scripts/biliapi.js",
-                "scripts/note.js",
                 "scripts/ui.js",
                 "scripts/md5.js",
                 "scripts/stopwords.js",
@@ -25,7 +24,7 @@
                 "content-scripts/content.js"
             ],
             "css": [
-                "css/idcard.css"
+                "css/viedocard.css"
             ]
         }
     ],

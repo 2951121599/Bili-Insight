@@ -124,60 +124,33 @@ function convertVideoData(map) {
     return data;
 }
 
-// async 
-function requestSearchPage(userId, pn, map, video) {
+function buildWordMap(map, video) {
 
-    data = {
-        code: 0,
-        data: {
-            page: {
-                count: 1
-            },
-            list: {
-                vlist: [
-                    video
-                ]
-            }
-        }
+
+    if (video["summary"]) {
+        updateWordMap(map, video["desc"], 1);
+        updateWordMap(map, video["summary"], 1);
+    } else {
+        updateWordMap(map, video["title"], 1);
+        updateWordMap(map, video["desc"], 1);
     }
 
-    if (data["code"] == 0) {
-        for (let v of data["data"]["list"]["vlist"]) {
 
-            if (v["summary"]) {
-                updateWordMap(map, v["desc"], 1);
-                updateWordMap(map, v["summary"], 1);
-            } else {
-                updateWordMap(map, v["title"], 1);
-                updateWordMap(map, v["desc"], 1);
-            }
+    updateTypeMap(map, video["tid"]);
 
-
-            updateTypeMap(map, v["tid"]);
-        }
-    }
-
-    return data
 
 }
 
-function updateVideoData(userId, callback, videoData) {
+function updateVideoData(videoId, callback, videoData) {
     let map = new Map();
     map.set("word", new Map());
     map.set("type", new Map());
 
 
-    // requestSearchPage(userId, 1, map).then((data) => {
-    data = requestSearchPage(userId, 1, map, videoData)
-    if (data["code"] == 0) {
-        let count = data["data"]["page"]["count"];
-        if (biliScopeOptions.enableWordCloud) {
-            cacheAndUpdate(callback, userId, "wordcloud", convertVideoData(map));
-        }
-    } else {
-        cacheAndUpdate(callback, userId, "wordcloud", { "word": [], "type": [] });
+    buildWordMap(map, videoData)
+    if (biliInsightOptions.enableWordCloud) {
+        cacheAndUpdate(callback, videoId, "wordcloud", convertVideoData(map));
     }
-    // });
 }
 
 function cacheValid(cache) {
@@ -189,40 +162,35 @@ function cacheValid(cache) {
     return true;
 }
 
-function cacheAndUpdate(callback, userId, api, payload) {
+function cacheAndUpdate(callback, videoId, api, payload) {
     let cache = {};
-    if (!userInfoCache.has(userId)) {
-        userInfoCache.set(userId, cache);
+    if (!userInfoCache.has(videoId)) {
+        userInfoCache.set(videoId, cache);
     } else {
-        cache = userInfoCache.get(userId);
+        cache = userInfoCache.get(videoId);
     }
     cache[api] = payload;
 
-    callback({ "uid": userId, "api": api, "payload": payload });
+    callback({ "uid": videoId, "api": api, "payload": payload });
 }
 
-function updateUserInfo(userId, callback) {
-    this._prevUserId = null;
+function updateVideoInfo(videoId, callback) {
+    this._prevVideoId = null;
 
-    if (this._prevUserId != userId) {
-        if (userInfoCache.has(userId) && cacheValid(userInfoCache.get(userId))) {
-            let cache = userInfoCache.get(userId);
+    if (this._prevVideoId != videoId) {
+        if (userInfoCache.has(videoId) && cacheValid(userInfoCache.get(videoId))) {
+            let cache = userInfoCache.get(videoId);
             for (let api in cache) {
-                callback({ "uid": userId, "api": api, "payload": cache[api] });
+                callback({ "uid": videoId, "api": api, "payload": cache[api] });
             }
         } else {
 
-            // description: 'BGM：La Ciudad——ODESZA\n          Rap God—— Eminem\n          Stronger —— Kanye West\n          感谢龚哥从上海帮我办了两次电话卡，感谢我班团支书辅导我数电实验',
-
-            // transcript: '都说今年是5g的商用元年',
-
-
-            getVideo(userId).then((video) => {
+            getVideo(videoId).then((video) => {
                 let subtitleUrl = video.subtitleUrl
                 if (subtitleUrl) {
                     // 标题和描述
                     // 云图
-                    updateUI(userId, callback, video)
+                    updateUI(videoId, callback, video)
                     chrome.runtime.sendMessage( //goes to bg_page.js
                         JSON.stringify({
                             type: 'subtitleUrl',
@@ -236,14 +204,14 @@ function updateUserInfo(userId, callback) {
                             });
                             let longText = rawTranscript.join("\n")
                             video.transcript = longText
-                            updateUI(userId, callback, video)
+                            updateUI(videoId, callback, video)
 
                         } //your callback
                     );
 
                 } else {
                     // has not  subtitle
-                    updateUI(userId, callback, video)
+                    updateUI(videoId, callback, video)
                 }
             })
 
@@ -254,7 +222,7 @@ function updateUserInfo(userId, callback) {
 }
 
 
-function updateUI(userId, callback, video) {
+function updateUI(videoId, callback, video) {
     let videoData = video
 
     if (video.transcript) {
@@ -264,7 +232,7 @@ function updateUI(userId, callback, video) {
                 text: video.transcript,
             }),
             (data) => {
-                cacheAndUpdate(callback, userId, "info", {
+                cacheAndUpdate(callback, videoId, "info", {
                     data: {
                         "like": videoData["stat"]["like"],
                         "coin": videoData["stat"]["coin"],
@@ -275,11 +243,11 @@ function updateUI(userId, callback, video) {
                         "summary": data.summary
                     }
                 })
-                updateVideoData(userId, callback, videoData);
+                updateVideoData(videoId, callback, videoData);
             } //your callback
         );
     } else {
-        cacheAndUpdate(callback, userId, "info", {
+        cacheAndUpdate(callback, videoId, "info", {
             data: {
                 "like": videoData["stat"]["like"],
                 "coin": videoData["stat"]["coin"],
@@ -290,7 +258,7 @@ function updateUI(userId, callback, video) {
                 "summary": videoData["desc"] ? videoData["desc"] : videoData["title"]
             }
         })
-        updateVideoData(userId, callback, videoData);
+        updateVideoData(videoId, callback, videoData);
     }
 
 
