@@ -53,6 +53,10 @@ function getTarget(target) {
             if (videoLink.tagName == "DIV" && videoLink.classList.contains("bili-video-card__wrap")) {
                 return videoLink;
             }
+            //动态页面
+            if (videoLink.tagName == "DIV" && videoLink.classList.contains("bili-dyn-content__orig__major")) {
+                return videoLink;
+            }
             if (videoLink.tagName == "DIV" && videoLink.classList.contains("small-item") && videoLink.classList.contains("fakeDanmu-item")) {
                 return videoLink;
             }
