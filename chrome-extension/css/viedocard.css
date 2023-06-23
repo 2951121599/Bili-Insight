@@ -67,7 +67,7 @@
     margin-right: 5px;
 }
 
-#word-cloud-canvas-wrapper {
+#word-cloud-canvas-wrapper-bi {
     height: 0px;
     overflow: hidden;
     transition-property: height, opacity;
@@ -75,6 +75,6 @@
     transition-timing-function: ease;
 }
 
-#word-cloud-canvas-wrapper.canvas-show {
+#word-cloud-canvas-wrapper-bi.canvas-show {
     height: 187.5px;
 }

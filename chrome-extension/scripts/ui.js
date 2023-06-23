@@ -84,7 +84,7 @@ function getVideoProfileCardHTML(data) {
             <div id="biliinsight-video-card-data-bi">
                 ${getVideoProfileCardDataHTML(data)}
             </div>
-            <div id="word-cloud-canvas-wrapper">
+            <div id="word-cloud-canvas-wrapper-bi">
                 <canvas id="word-cloud-canvas-bi" style="width: 100%; height: 0"></canvas>
             </div>
         </div>
