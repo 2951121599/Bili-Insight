@@ -153,6 +153,80 @@ function updateVideoData(videoId, callback, videoData) {
     }
 }
 
+const readStream2Map = async (
+    reader,
+    status
+) => {
+    let partialLine = "";
+    var resp = "";
+    let markmapData = "";
+
+    while (true) {
+        // eslint-disable-next-line no-await-in-loop
+        const { value, done } = await reader.read();
+        if (done) break;
+        const decoder = new TextDecoder("utf-8");
+        const decodedText = decoder.decode(value, { stream: true });
+
+        if (status !== 200) {
+            const json = JSON.parse(decodedText); // start with "data: "
+            const content = json.error.message ?? decodedText;
+            //appendLastMessageContent(content);
+            questionInfo += content;
+            resp += content;
+            return;
+        }
+        console.log("decodedText:" + decodedText);
+        markmapData += decodedText;
+
+    }
+    console.log("resp:" + resp);
+    return markmapData
+};
+
+async function updateMapData(videoId, callback, videoData) {
+    // let markmapData = "";
+    // try {
+
+    //     const result = await fetch("http://127.0.0.1:8000", {
+    //         method: "post",
+    //         // signal: AbortSignal.timeout(8000),
+    //         // 开启后到达设定时间会中断流式输出
+    //         headers: {
+    //             "Content-Type": "application/json",
+    //         },
+    //         body: JSON.stringify({
+    //             model: "gpt-3.5-turbo",
+    //             text: videoData.summary
+    //         }),
+    //     });
+    //     const { body, status } = await result;
+    //     if (body) {
+    //         const reader = body.getReader();
+    //         // await readStream(reader, status);
+    //         markmapData = await readStream2Map(reader, status);
+    //     }
+    // } catch (error) {
+    //     console.error(error);
+    // } finally {
+    //     console.log("markmapData res:" + markmapData);
+    //     cacheAndUpdate(callback, videoId, "markmap", markmapData);
+    // }
+    chrome.runtime.sendMessage( //goes to bg_page.js
+        JSON.stringify({
+            type: 'summary',
+            text: videoData.transcript ? videoData.transcript : videoData.summary,
+            method: 'markmap',
+        }),
+        (data) => {
+            cacheAndUpdate(callback, videoId, "markmap", {
+                data: data.summary
+            })
+        } //your callback
+    );
+}
+
+
 function cacheValid(cache) {
     for (let key of ["info", "wordcloud"]) {
         if (!cache[key]) {
@@ -186,7 +260,7 @@ function updateVideoInfo(videoId, callback) {
         } else {
 
             getVideo(videoId).then((video) => {
-                let subtitleUrl = video.subtitleUrl
+                let subtitleUrl = video.subtitleUrl1
                 if (subtitleUrl) {
                     // 标题和描述
                     // 云图
@@ -244,9 +318,12 @@ function updateUI(videoId, callback, video) {
                     }
                 })
                 updateVideoData(videoId, callback, videoData);
+
             } //your callback
         );
+        updateMapData(videoId, callback, videoData)
     } else {
+        videoData.summary = videoData["desc"] ? videoData["desc"] : videoData["title"]
         cacheAndUpdate(callback, videoId, "info", {
             data: {
                 "like": videoData["stat"]["like"],
@@ -255,10 +332,11 @@ function updateUI(videoId, callback, video) {
                 "share": videoData["stat"]["share"],
                 "pubdate": videoData["pubdate"],
                 "duration": videoData["duration"],
-                "summary": videoData["desc"] ? videoData["desc"] : videoData["title"]
+                "summary": videoData.summary
             }
         })
         updateVideoData(videoId, callback, videoData);
+        updateMapData(videoId, callback, videoData)
     }
 
 

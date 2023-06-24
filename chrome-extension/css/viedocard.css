@@ -78,3 +78,23 @@
 #word-cloud-canvas-wrapper-bi.canvas-show {
     height: 187.5px;
 }
+
+.markmap > svg {
+    width: 375px;
+    height: 200px;
+}
+
+.markmap > svg {
+    width: 375px;
+    height: 200px;
+}
+
+.markmap-wrapper {
+    height: 0px;
+    transition-property: height, opacity;
+    transition-duration: .25s;
+    transition-timing-function: ease;
+}
+.markmap-wrapper.canvas-show {
+    height: 200px;
+}

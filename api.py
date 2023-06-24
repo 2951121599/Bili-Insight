@@ -5,7 +5,7 @@ import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
-from gpt_analyze import analyze_by_3p5
+from gpt_analyze import summary_text
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
 
@@ -28,7 +28,7 @@ async def create_item(request: Request):
     text = json_post_list.get('text')
     api_key = json_post_list.get('apiKey')
     logging.info('input %s', text)
-    summary_text = analyze_by_3p5(text, api_key)
+    summary_text = summary_text(text, api_key)
     # summary_text = "x"
     logging.info('summary %s', summary_text)
     logging.info('input length %s,summary length %s', len(text), len(summary_text))
@@ -50,7 +50,7 @@ async def predict(request: Request):
     text = data[0]
     api_key = data[1]
     logging.info('input %s', text)
-    summary_text = analyze_by_3p5(text, api_key)
+    summary_text = summary_text(text, api_key)
     # summary_text = "x"
     logging.info('summary %s', summary_text)
     logging.info('input length %s,summary length %s', len(text), len(summary_text))

@@ -21,6 +21,8 @@
                 "scripts/md5.js",
                 "scripts/stopwords.js",
                 "scripts/wordcloud2.min.js",
+                "scripts/d3@6.7.0.js",
+                "scripts/markmap-view@0.14.4.js",
                 "content-scripts/content.js"
             ],
             "css": [

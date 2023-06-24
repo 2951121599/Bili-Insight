@@ -26,7 +26,10 @@ function getSummary(data, onSuccess) {
         "apiKey": '',
         minSize: 5
     }, function (items) {
-        fetch('https://yfor-bili-insight.hf.space/run/predict', {
+
+        const url = 'https://yfor-bili-insight2.hf.space/run/predict'
+        // const url = 'http://127.0.0.1:7860/run/predict'
+        fetch(url, {
             method: "POST", // or 'PUT'
             headers: {
                 "Content-Type": "application/json",
@@ -34,7 +37,8 @@ function getSummary(data, onSuccess) {
             body: JSON.stringify({
                 "data": [
                     data.text,
-                    items.apiKey ? items.apiKey : ''
+                    items.apiKey ? items.apiKey : '',
+                    data.method ? data.method : '',
                 ]
             }
             )

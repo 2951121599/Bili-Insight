@@ -11,4 +11,4 @@ iface = gr.Interface(fn=summary, inputs=[
                           type="password"),
     gr.Radio(["summary", "markmap"], value="summary", label="Select summarizing method")
 ], outputs="text")
-iface.launch()
+iface.launch(share=True)

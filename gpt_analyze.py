@@ -9,8 +9,17 @@ from langchain.docstore.document import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from openai.error import AuthenticationError
 
+from get_markdown import get_markdown
 
-def analyze_by_3p5(text, api_key=None):
+
+def summary(text, api_key=None, method='summary'):
+    if method == 'markmap':
+        return get_markdown(text, api_key)
+    else:
+        return summary_text(text, api_key)
+
+
+def summary_text(text, api_key=None):
     """
     使用 GPT-3.5 模型分析总结文本
     :param text: 文本
@@ -68,9 +77,9 @@ def analyze_by_3p5(text, api_key=None):
 
 if __name__ == '__main__':
     # 测试
-    print(analyze_by_3p5("""
+    print(summary_text("""
     每个人都有变好的能力，但是能帮助你的人是你自己，也只有你自己。所有的困境都有出路，人的改变是在关系中发生的，心理治疗既需要自我觉醒，又需要和谐的人际关系建立，两者不可或缺。心理问题往往都是人际关系的问题，不仅是你和别人，还有你和自己的关系。让自己变得更好，才是解决问题的关键。当你不再和自己纠缠，所处的一切关系才会顺畅。作为咨询师，她是一个倾听者，倾听来访者内心的痛苦与不安。作为来访者，她是一个诉说者，诉说内心的难过与彷徨。
     """))
-    print(analyze_by_3p5("""
+    print(summary_text("""
     用户是 B 站的视频观众，他们希望通过使用这个插件来更好地理解视频的内容。当用户鼠标至视频标题时，插件会自动展示内容总结，通过思维导图/词云等方式以可视化的形式呈现给用户，方便用户快速了解视频内容。
     """))

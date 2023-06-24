@@ -87,6 +87,10 @@ function getVideoProfileCardHTML(data) {
             <div id="word-cloud-canvas-wrapper-bi">
                 <canvas id="word-cloud-canvas-bi" style="width: 100%; height: 0"></canvas>
             </div>
+            <div class="markmap markmap-wrapper">
+                <svg class="markmap">
+                </svg>
+            </div>
         </div>
     `
 }
@@ -127,6 +131,11 @@ VideoProfileCard.prototype.disable = function () {
             canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
             canvas.parentNode.classList.remove("canvas-show");
         }
+        let svgEl = document.getElementsByClassName('markmap')[1];
+        if (svgEl) {
+            svgEl.parentNode.classList.remove("canvas-show");
+        }
+
         this.idCardObserver.disconnect();
     }
 }
@@ -279,6 +288,21 @@ VideoProfileCard.prototype.updateData = function (data) {
         // if has duration
         document.getElementById("biliinsight-video-card-data-bi").innerHTML = getVideoProfileCardDataHTML(this.data);
         this.drawVideoTags();
+    }
+    if (data["api"] == "markmap") {
+
+        document.getElementById("biliinsight-video-card-data-bi").innerHTML = getVideoProfileCardDataHTML(this.data);
+        let svgEl = document.getElementsByClassName('markmap')[1]
+
+        this.drawVideoTags();
+        setTimeout(() => {
+            this.mm = markmap.Markmap.create(svgEl);
+            let { root } = new markmap.Transformer().transform(data.payload.data
+            );
+            this.mm.setData(root);
+            this.mm.fit();
+            svgEl.parentNode.classList.add("canvas-show");
+        }, 10);
     }
 
     if (this.enabled && this.el && this.el.style.display != "flex") {

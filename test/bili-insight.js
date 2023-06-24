@@ -49,6 +49,33 @@ function fakeShow(event) {
 
     updateVideoData(videoId, (data) => videoProfileCard.updateData(data), videoData);
 
+    summary = `---
+markmap:
+    colorFreezeLevel: 2
+---
+
+# markmap
+
+## Links
+
+- <https://markmap.js.org/>
+- [GitHub](https://github.com/gera2ld/markmap)
+
+## Related Projects
+
+- [coc-markmap](https://github.com/gera2ld/coc-markmap)
+- [gatsby-remark-markmap](https://github.com/gera2ld/gatsby-remark-markmap)
+
+## Features
+
+- links
+- **strong** ~~del~~ *italic* ==highlight==
+- multiline
+    text`
+    cacheAndUpdate((data) => videoProfileCard.updateData(data), videoId, "markmap", {
+        data: summary
+    })
+
 }
 fakeShow()
 
