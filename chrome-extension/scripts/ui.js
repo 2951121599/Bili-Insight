@@ -296,7 +296,9 @@ VideoProfileCard.prototype.updateData = function (data) {
 
         this.drawVideoTags();
         setTimeout(() => {
-            this.mm = markmap.Markmap.create(svgEl);
+            if(!this.mm){
+                this.mm = markmap.Markmap.create(svgEl);
+            }
             let { root } = new markmap.Transformer().transform(data.payload.data
             );
             this.mm.setData(root);
