@@ -50,11 +50,16 @@ sequenceDiagram
 ![截图](img/huggingface.png)
 
 ## 加入我们
-添加个人联系方式
-![img](img/Wechat_Taylor.jpeg)
+<b>1. 添加个人联系方式</b>
+<div align="center">
+    <img src="img/Wechat_Taylor.jpeg" width=20%>
+    <br/><br/><br/><br/><br/>
+</div>
 
-加入开发/体验/内测组
-![img](img/Wechat_Group.jpeg)
+<b>2. 加入开发/体验/内测组</b>
+<div align="center">
+    <img src="img/Wechat_Group.jpeg" width=30%>
+</div>
 
 ## 参考资料
 * [吕立青：BiliGPT](https://github.com/JimmyLv/BibiGPT)
