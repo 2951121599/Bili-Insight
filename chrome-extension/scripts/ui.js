@@ -296,14 +296,18 @@ VideoProfileCard.prototype.updateData = function (data) {
 
         this.drawVideoTags();
         setTimeout(() => {
-            if(!this.mm){
+            if (!this.mm) {
                 this.mm = markmap.Markmap.create(svgEl);
             }
-            let { root } = new markmap.Transformer().transform(data.payload.data
-            );
-            this.mm.setData(root);
-            this.mm.fit();
-            svgEl.parentNode.classList.add("canvas-show");
+            let { root } = new markmap.Transformer().transform(data.payload.data);
+            if (root.children) {
+                this.mm.setData(root);
+                this.mm.fit();
+                svgEl.parentNode.classList.add("canvas-show");
+            } else {
+                svgEl.parentNode.classList.remove("canvas-show");
+            }
+
         }, 10);
     }
 
