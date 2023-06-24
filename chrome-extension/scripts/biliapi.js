@@ -58,6 +58,9 @@ async function getVideo(bvid) {
     })
         .then((data) => {
             let video = data["data"]
+            if (!video) {
+                return
+            }
             let subList = data["data"]["subtitle"]["list"]
             if (subList.length) {
                 video.subtitleUrl = subList[0]["subtitle_url"];
@@ -260,6 +263,9 @@ function updateVideoInfo(videoId, callback) {
         } else {
 
             getVideo(videoId).then((video) => {
+                if (!video) {
+                    return
+                }
                 let subtitleUrl = video.subtitleUrl
                 if (subtitleUrl) {
                     // 标题和描述
@@ -272,6 +278,9 @@ function updateVideoInfo(videoId, callback) {
                         }),
                         (data) => {
                             let rawSubTitles = data["body"]
+                            if (!rawSubTitles) {
+                                return
+                            }
                             var rawTranscript = []
                             rawSubTitles.forEach(element => {
                                 rawTranscript.push(element["content"])

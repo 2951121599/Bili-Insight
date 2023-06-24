@@ -299,10 +299,16 @@ colorFreezeLevel: 2
 maxWidth: 300
 embedAssets: true
 ---\n`
-
-        let { root } = new markmap.Transformer().transform(markMapConfig + data.payload.data.split('\n').slice(0, 12).join('\n'));
+        let markmapContext = data.payload.data
+        if (markmapContext && data.payload.data.split('\n').length > 12) {
+            markmapContext = data.payload.data.split('\n').slice(0, 12).join('\n')
+        }
+        if (!markmapContext) {
+            return
+        }
+        let { root } = new markmap.Transformer().transform(markMapConfig + markmapContext);
         if (root.children) {
-            this.mm.setData({});
+            this.mm.setData(root);
             this.mm.fit();
             svgEl.parentNode.classList.add("canvas-show");
         } else {

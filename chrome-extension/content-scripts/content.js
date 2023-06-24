@@ -17,12 +17,19 @@ biliInsightOptions = {
 
 function getVideoFromLink(url) {
     var vid = url.split("/")[4];
+    if (vid.startsWith('BV')) {
+        if (vid.indexOf('?') > 5) {
+            return vid.slice(0, vid.indexOf('?'));
+        }
 
-    return vid;
+        return vid;
+    }
 }
 
 async function getVideoId(target) {
-
+    if (target.tagName == "DIV" && target.classList.contains("card-box")) {
+        return getVideoFromLink(target.childNodes[1].firstChild.href);
+    }
     if (target.tagName == "A" && target.classList.contains("dynamic-video-item")) {
         return getVideoFromLink(target.href);
     }
@@ -32,6 +39,9 @@ async function getVideoId(target) {
     }
 
     let vid = getVideoFromLink(target.childNodes[0].firstChild.href);
+
+
+
 
     if (vid) {
         return vid;
@@ -68,7 +78,10 @@ function getTarget(target) {
             if (videoLink.tagName == "DIV" && videoLink.classList.contains("small-item") && videoLink.classList.contains("fakeDanmu-item")) {
                 return videoLink;
             }
-
+            //推荐
+            if (videoLink.tagName == "DIV" && videoLink.classList.contains("card-box")) {
+                return videoLink;
+            }
         }
     }
     return null;

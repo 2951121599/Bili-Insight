@@ -36,7 +36,8 @@ def summary_text(text, api_key=None):
         docs = [Document(page_content=t) for t in texts]
 
         # 我们定义一个模板字符串，用于提示 GPT-3.5 总结原始文本并生成汉语总结。
-        template_str = """Write a total summary of the following:
+        template_str = """我希望你是一名专业的视频内容编辑，帮我用总结视频的内容精华。
+        请你将视频字幕文本进行总结：（字幕中可能有错别字，如果你发现了错别字请改正）
         {text}
         SUMMARY IN CHINESE:"""
         prompt_template = PromptTemplate(input_variables=["text"], template=template_str)

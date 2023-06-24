@@ -6,7 +6,7 @@
 
 Bili Insight，借助GPT洞察B站视频内容[Chrome插件](https://chrome.google.com/webstore/detail/bili-insight%EF%BC%8C%E6%B4%9E%E5%AF%9Fb%E7%AB%99%E8%A7%86%E9%A2%91%E5%86%85%E5%AE%B9%E6%8F%92%E4%BB%B6/akodljjoaekbfjacabnihcbcbioidnfg?hl=zh-CN)。它可以让你不用点开视频，更快地了解视频的总结内容。
 <p align="center">
-    • 🤗 <a href="https://huggingface.co/spaces/yfor/Bili-Insight" target="_blank"> Huggingface Space</a>
+    • 🤗 <a href="https://yfor-bili-insight2.hf.space/" target="_blank"> Huggingface Space</a>
     • 📺 <a href="https://b23.tv/P9ao5bc" target="_blank">介绍视频1</a>
     • 📺 <a href="https://www.bilibili.com/video/BV1KV4y1S7Rw/" target="_blank">介绍视频2</a> 
     • 📑 <a href="https://emoumcwvfx.feishu.cn/docx/FUNYdH8ClolsBjxrEm3crZt0nTh" target="_blank">项目规划文档</a> 
