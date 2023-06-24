@@ -23,6 +23,10 @@ function getVideoFromLink(url) {
 
 async function getVideoId(target) {
 
+    if (target.tagName == "A" && target.classList.contains("dynamic-video-item")) {
+        return getVideoFromLink(target.href);
+    }
+
     if (target.childNodes[0].tagName == "A") {
         return getVideoFromLink(target.childNodes[0].href);
     }
@@ -57,6 +61,10 @@ function getTarget(target) {
             if (videoLink.tagName == "DIV" && videoLink.classList.contains("bili-dyn-content__orig__major")) {
                 return videoLink;
             }
+            if (videoLink.tagName == "A" && videoLink.classList.contains("dynamic-video-item")) {
+                return videoLink;
+            }
+
             if (videoLink.tagName == "DIV" && videoLink.classList.contains("small-item") && videoLink.classList.contains("fakeDanmu-item")) {
                 return videoLink;
             }
