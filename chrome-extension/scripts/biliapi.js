@@ -285,7 +285,7 @@ function updateVideoInfo(videoId, callback) {
 
                 } else {
                     // has not  subtitle
-                    updateUI(videoId, callback, true)
+                    updateUI(videoId, callback, video, true)
                 }
             })
 
