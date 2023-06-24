@@ -260,7 +260,7 @@ function updateVideoInfo(videoId, callback) {
         } else {
 
             getVideo(videoId).then((video) => {
-                let subtitleUrl = video.subtitleUrl1
+                let subtitleUrl = video.subtitleUrl
                 if (subtitleUrl) {
                     // 标题和描述
                     // 云图
