@@ -4,7 +4,7 @@
     border-radius: 8px;
     position: absolute;
     z-index: 1002;
-    width: 475px;
+    width: 425px;
     line-height: 1.6;
     overflow: hidden;
 }
@@ -80,12 +80,12 @@
 }
 
 .markmap > svg {
-    width: 475px;
+    width: 425px;
     height: 200px;
 }
 
 .markmap > svg {
-    width: 475px;
+    width: 425px;
     height: 200px;
 }
 
