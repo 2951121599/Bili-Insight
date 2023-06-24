@@ -22,11 +22,7 @@ Bili Insight，借助GPT洞察B站视频内容[Chrome插件](https://chrome.goog
 * up主视频的内容总结。默认为视频简介。待请求完成后，会替换为视频内容总结
 * up主视频字幕、标题、简介、tag生成的词云
 ## 示例
-![GIF](chrome-extension/images/insight.png)
-
-## 使用演示
-* 打开开发者模式，加载浏览器插件，选择chrome-extension.
-* 打开b站，鼠标悬浮在视频上
+![png](chrome-extension/images/insight.png)
 
 ## 设计
 ```mermaid
@@ -52,6 +48,13 @@ sequenceDiagram
 
 ###  Huggingface部署
 ![截图](img/huggingface.png)
+
+## 加入我们
+添加个人联系方式
+![img](img/Wechat_Taylor.jpeg)
+
+加入开发/体验/内测组
+![img](img/Wechat_Group.jpeg)
 
 ## 参考资料
 * [吕立青：BiliGPT](https://github.com/JimmyLv/BibiGPT)
