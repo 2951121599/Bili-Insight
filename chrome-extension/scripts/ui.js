@@ -60,10 +60,8 @@ function getVideoProfileCardDataHTML(data) {
                 </div>
                 <div class="idc-meta">
                     <span class="idc-meta-item"><data-title>分享</data-title> ${numberToDisplay(data["share"]) || 0}</span>
-                    <span class="idc-meta-item"><data-title>投稿时间</data-title> ${timestampToDisplay(data["pubdate"])}</span>
-                </div>
-                <div class="idc-meta">
-                    <span class="idc-meta-item"><data-title>视频长度</data-title> ${secondsToDisplay(data["duration"])}</span>
+                    <span class="idc-meta-item"><data-title>投稿</data-title> ${timestampToDisplay(data["pubdate"])}</span>
+                    <span class="idc-meta-item"><data-title>时长</data-title> ${secondsToDisplay(data["duration"])}</span>
                 </div>
             </div>
             <div id="tag-list-bi">
@@ -290,25 +288,25 @@ VideoProfileCard.prototype.updateData = function (data) {
         this.drawVideoTags();
     }
     if (data["api"] == "markmap") {
-
-        document.getElementById("biliinsight-video-card-data-bi").innerHTML = getVideoProfileCardDataHTML(this.data);
         let svgEl = document.getElementsByClassName('markmap')[1]
+        if (!this.mm) {
+            this.mm = markmap.Markmap.create(svgEl);
+        }
+        let markMapConfig = `---
+markmap:
+colorFreezeLevel: 2
+maxWidth: 300
+embedAssets: true
+---\n`
 
-        this.drawVideoTags();
-        setTimeout(() => {
-            if (!this.mm) {
-                this.mm = markmap.Markmap.create(svgEl);
-            }
-            let { root } = new markmap.Transformer().transform(data.payload.data);
-            if (root.children) {
-                this.mm.setData(root);
-                this.mm.fit();
-                svgEl.parentNode.classList.add("canvas-show");
-            } else {
-                svgEl.parentNode.classList.remove("canvas-show");
-            }
-
-        }, 10);
+        let { root } = new markmap.Transformer().transform(markMapConfig + data.payload.data.split('\n').slice(0, 12).join('\n'));
+        if (root.children) {
+            this.mm.setData(root);
+            this.mm.fit();
+            svgEl.parentNode.classList.add("canvas-show");
+        } else {
+            svgEl.parentNode.classList.remove("canvas-show");
+        }
     }
 
     if (this.enabled && this.el && this.el.style.display != "flex") {

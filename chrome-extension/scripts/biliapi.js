@@ -264,7 +264,7 @@ function updateVideoInfo(videoId, callback) {
                 if (subtitleUrl) {
                     // 标题和描述
                     // 云图
-                    updateUI(videoId, callback, video)
+                    updateUI(videoId, callback, video, false)
                     chrome.runtime.sendMessage( //goes to bg_page.js
                         JSON.stringify({
                             type: 'subtitleUrl',
@@ -278,14 +278,14 @@ function updateVideoInfo(videoId, callback) {
                             });
                             let longText = rawTranscript.join("\n")
                             video.transcript = longText
-                            updateUI(videoId, callback, video)
+                            updateUI(videoId, callback, video, true)
 
                         } //your callback
                     );
 
                 } else {
                     // has not  subtitle
-                    updateUI(videoId, callback, video)
+                    updateUI(videoId, callback, true)
                 }
             })
 
@@ -296,7 +296,7 @@ function updateVideoInfo(videoId, callback) {
 }
 
 
-function updateUI(videoId, callback, video) {
+function updateUI(videoId, callback, video, markMap) {
     let videoData = video
 
     if (video.transcript) {
@@ -336,7 +336,10 @@ function updateUI(videoId, callback, video) {
             }
         })
         updateVideoData(videoId, callback, videoData);
-        updateMapData(videoId, callback, videoData)
+        if (markMap) {
+            updateMapData(videoId, callback, videoData)
+        }
+
     }
 
 

@@ -49,14 +49,7 @@ function fakeShow(event) {
 
     updateVideoData(videoId, (data) => videoProfileCard.updateData(data), videoData);
 
-    summary = `---
-markmap:
-    colorFreezeLevel: 2
----
-
-# markmap
-
-## Links
+    summary = `## Links
 
 - <https://markmap.js.org/>
 - [GitHub](https://github.com/gera2ld/markmap)

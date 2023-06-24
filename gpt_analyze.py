@@ -29,7 +29,7 @@ def summary_text(text, api_key=None):
     try:
 
         # 初始化文本分割器，指定每个块的大小为2000。
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=0)
+        text_splitter = RecursiveCharacterTextSplitter(chunk_size=8000, chunk_overlap=0)
         # 切分文本
         texts = text_splitter.split_text(text)
         # 使用 Document 类创建文档对象
@@ -57,7 +57,7 @@ def summary_text(text, api_key=None):
             openai_api_key = api_key
         else:
             openai_api_key = os.getenv('OPENAI_API_KEY')
-        llm = OpenAI(temperature=0, model_name="gpt-3.5-turbo", openai_api_key=openai_api_key)
+        llm = OpenAI(temperature=0, model_name="gpt-3.5-turbo-16k", openai_api_key=openai_api_key)
 
         # 加载总结和完善模型链，并向其提供刚才定义的两个模板字符串作为问题和细化问题的提示。
         chain = load_summarize_chain(llm, chain_type="refine", return_intermediate_steps=True,
