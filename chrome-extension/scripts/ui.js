@@ -214,9 +214,9 @@ VideoProfileCard.prototype.updateCursor = function (cursorX, cursorY) {
 
 VideoProfileCard.prototype.updateTarget = function (target) {
     this.target = target;
-    upc = this
+    let vpc = this
     this.target.addEventListener("mouseleave", function leaveHandle(ev) {
-        upc.disable();
+        vpc.disable();
         this.removeEventListener("mouseleave", leaveHandle);
     })
 }
@@ -292,6 +292,7 @@ VideoProfileCard.prototype.updateData = function (data) {
         if (!this.mm) {
             this.mm = markmap.Markmap.create(svgEl);
         }
+
         let markMapConfig = `---
 markmap:
 colorFreezeLevel: 2
@@ -301,7 +302,7 @@ embedAssets: true
 
         let { root } = new markmap.Transformer().transform(markMapConfig + data.payload.data.split('\n').slice(0, 12).join('\n'));
         if (root.children) {
-            this.mm.setData(root);
+            this.mm.setData({});
             this.mm.fit();
             svgEl.parentNode.classList.add("canvas-show");
         } else {

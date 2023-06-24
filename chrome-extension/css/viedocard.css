@@ -1,6 +1,6 @@
 #biliinsight-video-card {
     background: #fff;
-    box-shadow: 0 0 2px rgba(0,0,0,.3);
+    box-shadow: 0 0 2px rgba(0, 0, 0, .3);
     border-radius: 8px;
     position: absolute;
     z-index: 1002;
@@ -79,14 +79,9 @@
     height: 187.5px;
 }
 
-.markmap > svg {
+.markmap>svg {
     width: 425px;
-    height: 200px;
-}
-
-.markmap > svg {
-    width: 425px;
-    height: 200px;
+    height: 220px;
 }
 
 .markmap-wrapper {
@@ -95,6 +90,7 @@
     transition-duration: .25s;
     transition-timing-function: ease;
 }
+
 .markmap-wrapper.canvas-show {
     height: 200px;
 }
