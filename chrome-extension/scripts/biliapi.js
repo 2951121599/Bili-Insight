@@ -315,6 +315,7 @@ function updateUI(videoId, callback, video, markMap) {
                 text: video.transcript,
             }),
             (data) => {
+
                 cacheAndUpdate(callback, videoId, "info", {
                     data: {
                         "like": videoData["stat"]["like"],
@@ -326,6 +327,7 @@ function updateUI(videoId, callback, video, markMap) {
                         "summary": data.summary
                     }
                 })
+                videoData.summary = data.summary
                 updateVideoData(videoId, callback, videoData);
 
             } //your callback
