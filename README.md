@@ -1,28 +1,28 @@
 # Bili-Insight
 
 <div align="center">
-    <img src="img/Bili-Insight-1.png" width=20%>
+    <img src="img/Bili-Insight.png" width=20%>
 </div>
 
-Bili Insight，借助GPT洞察B站视频内容[Chrome插件](https://chrome.google.com/webstore/detail/bili-insight%EF%BC%8C%E6%B4%9E%E5%AF%9Fb%E7%AB%99%E8%A7%86%E9%A2%91%E5%86%85%E5%AE%B9%E6%8F%92%E4%BB%B6/akodljjoaekbfjacabnihcbcbioidnfg?hl=zh-CN)。它可以让你不用点开视频，更快地了解视频的总结内容。
+Bili Insight，借助GPT洞察B站视频内容[Chrome插件](https://chrome.google.com/webstore/detail/bili-insight%EF%BC%8C%E6%B4%9E%E5%AF%9Fb%E7%AB%99%E8%A7%86%E9%A2%91%E5%86%85%E5%AE%B9%E6%8F%92%E4%BB%B6/akodljjoaekbfjacabnihcbcbioidnfg?hl=zh-CN)。它可以让你不用点开视频，以可视化的方式更快地了解视频的基本信息和总结内容。
 <p align="center">
-    • 🤗 <a href="https://yfor-bili-insight2.hf.space/" target="_blank"> Huggingface Space</a>
-    • 📺 <a href="https://b23.tv/P9ao5bc" target="_blank">介绍视频1</a>
-    • 📺 <a href="https://www.bilibili.com/video/BV1KV4y1S7Rw/" target="_blank">介绍视频2</a> 
-    • 📑 <a href="https://emoumcwvfx.feishu.cn/docx/FUNYdH8ClolsBjxrEm3crZt0nTh" target="_blank">项目规划文档</a> 
+     🤗 <a href="https://yfor-bili-insight2.hf.space/" target="_blank"> Huggingface Space</a>
+     📺 <a href="https://b23.tv/P9ao5bc" target="_blank">介绍视频1</a>
+     📺 <a href="https://www.bilibili.com/video/BV1KV4y1S7Rw/" target="_blank">介绍视频2</a> 
+     📑 <a href="https://emoumcwvfx.feishu.cn/docx/FUNYdH8ClolsBjxrEm3crZt0nTh" target="_blank">项目规划文档</a> 
     
 </p>
-用户是 B 站的视频观众，他们希望通过使用这个插件来更好地理解视频的内容。
 
-当浏览B站时，把鼠标悬停至视频或标题时，插件会自动展示内容总结，通过词云/思维导图等方式以可视化的形式呈现给用户，方便用户快速了解视频内容。
+用户浏览B站时，把鼠标悬停至视频或标题上，插件会在视频旁弹出卡片。自动展示视频基本信息，并将总结内容通过词云&思维导图的方式以可视化的形式呈现，方便用户快速了解视频内容。
 
 * up主视频的点赞、投币、收藏、分享数据
 * up主视频的投稿时间、视频长度数据
 * up主投稿视频的所在分区
 * up主视频的内容总结。默认为视频简介。待请求完成后，会替换为视频内容总结
 * up主视频字幕、标题、简介、tag生成的词云
-## 示例
-![png](chrome-extension/images/insight.png)
+## 演示示例
+![演示图片](img/Insight_1280x800.png)
+![演示动画](img/demo.gif)
 
 ## 设计
 ```mermaid

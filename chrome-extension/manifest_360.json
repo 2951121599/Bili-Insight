@@ -1,10 +1,10 @@
 {
-    "name": "Bili Insight，洞察B站视频内容插件",
+    "name": "Bili Insight - 借助GPT洞察B站视频内容",
     "version": "0.3.2",
     "manifest_version": 3,
-    "description": "Bili Insight，借助GPT,通过使用这个插件来更快地了解视频的内容。当浏览B站时，把鼠标悬停至视频或标题时，插件利用ChatGPT会自动展示内容总结，通过词云/思维导图等方式以可视化的形式呈现给用户，方便用户快速了解视频内容。",
+    "description": "以卡片可视化形式，更快地了解视频的基本信息和总结内容。",
     "icons": {
-        "16": "icons/bili_insight_16x16.png"
+        "16": "icons/bili_insight_32x32.png"
     },
     "action": {
         "default_popup": "popup/popup.html"
