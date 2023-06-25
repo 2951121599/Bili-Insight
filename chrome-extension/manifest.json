@@ -4,7 +4,7 @@
     "manifest_version": 3,
     "description": "以卡片可视化形式，更快地了解视频的基本信息和总结内容。",
     "icons": {
-        "16": "icons/bili_insight_32x32.png"
+        "16": "icons/bili_insight_16x16.png"
     },
     "action": {
         "default_popup": "popup/popup.html"
