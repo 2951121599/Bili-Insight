@@ -61,7 +61,7 @@ async function getVideo(bvid) {
             if (!video) {
                 return
             }
-            let subList = data["data"]["subtitle"]["list"]
+            let subList = data["data"]["subtitle"]??["list"]
             if (subList.length) {
                 video.subtitleUrl = subList[0]["subtitle_url"];
             }
