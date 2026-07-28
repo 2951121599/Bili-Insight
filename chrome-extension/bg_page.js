@@ -27,7 +27,8 @@ function getSummary(data, onSuccess) {
         minSize: 5
     }, function (items) {
 
-        const url = 'https://yfor-bili-insight2.hf.space/run/predict'
+        const host = items.apiHost || 'https://yfor-bili-insight2.hf.space';
+        const url = `${host}/run/predict`;
         // const url = 'http://127.0.0.1:7860/run/predict'
         fetch(url, {
             method: "POST", // or 'PUT'
