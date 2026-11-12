@@ -104,9 +104,25 @@ function abortRequest(requestId) {
 
 /* ---------------- 字幕 ---------------- */
 
+const ALLOWED_SUBTITLE_HOSTS = [/(^|\.)hdslb\.com$/, /(^|\.)bilibili\.com$/];
+
+function isAllowedSubtitleUrl(url) {
+    try {
+        const parsed = new URL(url);
+        return parsed.protocol === "https:" &&
+            ALLOWED_SUBTITLE_HOSTS.some((re) => re.test(parsed.hostname));
+    } catch (e) {
+        return false;
+    }
+}
+
 async function getSubtitleUrl(data, onSuccess) {
     if (!data.url) {
         onSuccess({ body: null });
+        return;
+    }
+    if (!isAllowedSubtitleUrl(data.url)) {
+        onSuccess({ body: null, error: "非法的字幕地址" });
         return;
     }
     try {
