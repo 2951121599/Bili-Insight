@@ -21,6 +21,10 @@ let messages = [];
 const pendingSummary = new Map();
 let subtitleResponse = { body: [{ content: "第一句", from: 0, to: 2 }, { content: "第二句", from: 2, to: 4 }] };
 
+// player 接口的返回。undefined 表示接口挂了，用来验证回退到 view 的字幕
+let playerResponse;
+let biliGetCalls = [];
+
 global.chrome = {
     runtime: {
         lastError: null,
@@ -51,14 +55,34 @@ for (const file of ["scripts/constants.js", "scripts/md5.js", "scripts/biliapi.j
     vm.runInThisContext(fs.readFileSync(path.join(ROOT, file), "utf8"), { filename: file });
 }
 
+// 测试绝不能真的打 B 站接口：所有 biliGet 调用都在这里截住
+global.biliGet = async (url, params) => {
+    biliGetCalls.push({ url, params });
+    if (playerResponse === undefined) {
+        throw new Error("player 接口挂了");
+    }
+    return playerResponse;
+};
+
 /* ---------------- 工具 ---------------- */
 
 const tick = (ms = 30) => new Promise((resolve) => setTimeout(resolve, ms));
 const summaryMessages = () => messages.filter((msg) => msg.type === "summary");
+const subtitleMessages = () => messages.filter((msg) => msg.type === "subtitleUrl");
 
-function fakeVideo(id) {
+function humanSub(url = "//aisubtitle.hdslb.com/human.json") {
+    return { subtitle_url: url, lan: "zh-CN", lan_doc: "中文（中国）", ai_type: 0 };
+}
+
+function aiSub(url = "//aisubtitle.hdslb.com/ai.json") {
+    return { subtitle_url: url, lan: "ai-zh", lan_doc: "中文（自动生成）", ai_type: 1 };
+}
+
+function fakeVideo(id, subs) {
     return {
         bvid: id,
+        cid: 111,
+        pages: [{ cid: 111, page: 1 }, { cid: 222, page: 2 }],
         title: "标题 " + id,
         duration: 600,
         desc: "简介",
@@ -66,7 +90,7 @@ function fakeVideo(id) {
         tid: 188,
         pubdate: 1700000000,
         stat: { view: 1000, like: 10, coin: 1, favorite: 2, share: 3, reply: 4, danmaku: 5 },
-        subtitleUrl: "//aisubtitle.hdslb.com/x.json",
+        subtitle: { list: subs === undefined ? [humanSub()] : subs },
     };
 }
 
@@ -83,6 +107,8 @@ const RESULT = {
 function begin() {
     cancelPendingRequest();
     messages = [];
+    biliGetCalls = [];
+    playerResponse = { data: { subtitle: { subtitles: [] } } };
 }
 
 function resolveSummary(requestId, data) {
@@ -106,7 +132,12 @@ test("[1] 一次悬停只发一条模型请求", async () => {
     const first = summaryMessages()[0];
     assert.ok(first.requestId, "消息必须带 requestId，否则没法取消");
     assert.equal(first.videoId, "BV1aa");
-    assert.equal(first.payload.transcript, "第一句\n第二句", "字幕应该被拼成一段");
+    assert.equal(
+        first.payload.transcript,
+        "[00:00] 第一句\n[00:02] 第二句",
+        "字幕每行前面要带时间戳，否则要点没法跳到具体进度"
+    );
+    assert.equal(first.payload.subtitleKind, "human", "人工 CC 要标成 human");
     assert.ok(received.some((d) => d.api === "stats"), "互动数据要先到，不等模型");
 
     resolveSummary(first.requestId, RESULT);
@@ -228,13 +259,85 @@ test("[7] cancelPendingRequest 幂等", async () => {
 
 test("[8] 无字幕视频直接走降级，不去抓字幕", async () => {
     begin();
-    const video = fakeVideo("BV8gg");
-    delete video.subtitleUrl;
-    global.getVideo = async () => video;
+    global.getVideo = async () => fakeVideo("BV8gg", []);
 
     updateVideoInfo("BV8gg", () => {});
     await tick(60);
 
-    assert.equal(messages.filter((msg) => msg.type === "subtitleUrl").length, 0, "没有字幕地址就不该去请求");
+    assert.equal(subtitleMessages().length, 0, "没有字幕地址就不该去请求");
     assert.equal(summaryMessages().length, 1, "仍然要给出判断");
+    assert.equal(summaryMessages()[0].payload.subtitleKind, "", "没有字幕就不该有 kind");
+});
+
+/* ---------------- 字幕来源与择优 ---------------- */
+
+test("[9] 人工 CC 优先于 AI 字幕", async () => {
+    begin();
+    // view 只给了 AI 字幕，player 里人工和 AI 都有
+    global.getVideo = async () => fakeVideo("BV9hh", [aiSub()]);
+    playerResponse = {
+        data: {
+            subtitle: {
+                subtitles: [aiSub(), humanSub("//aisubtitle.hdslb.com/best.json")],
+            },
+        },
+    };
+
+    updateVideoInfo("BV9hh", () => {});
+    await tick(60);
+
+    const got = subtitleMessages()[0];
+    assert.ok(got, "应该去抓字幕");
+    assert.equal(got.url, "https://aisubtitle.hdslb.com/best.json", "人工 CC 断句准，必须优先");
+    assert.equal(summaryMessages()[0].payload.subtitleKind, "human");
+});
+
+test("[10] view 没有字幕时，从 player 接口补上 AI 字幕", async () => {
+    begin();
+    global.getVideo = async () => fakeVideo("BV9ii", []);
+    playerResponse = { data: { subtitle: { subtitles: [aiSub()] } } };
+
+    updateVideoInfo("BV9ii", () => {});
+    await tick(60);
+
+    assert.equal(subtitleMessages().length, 1, "view 为空不代表真的没字幕，分P 和 AI 字幕只在 player 里");
+    assert.equal(summaryMessages()[0].payload.subtitleKind, "ai", "AI 字幕要如实标注，卡片会提示可能有错字");
+});
+
+test("[11] player 接口挂了就用 view 的结果兜底", async () => {
+    begin();
+    global.getVideo = async () => fakeVideo("BV9jj", [humanSub()]);
+    playerResponse = undefined; // 让 biliGet 抛错
+
+    updateVideoInfo("BV9jj", () => {});
+    await tick(60);
+
+    assert.equal(subtitleMessages().length, 1, "player 挂了不能变成无字幕");
+    assert.equal(summaryMessages()[0].payload.transcript, "[00:00] 第一句\n[00:02] 第二句");
+});
+
+test("[12] 分P 视频按 cid 取当前 P 的字幕", async () => {
+    begin();
+    global.getVideo = async () => fakeVideo("BV9kk", []);
+    playerResponse = { data: { subtitle: { subtitles: [humanSub()] } } };
+
+    updateVideoInfo("BV9kk", () => {});
+    await tick(60);
+
+    const call = biliGetCalls.find((c) => c.url.indexOf("/x/player/wbi/v2") !== -1);
+    assert.ok(call, "必须请求 player 接口");
+    assert.equal(call.params.bvid, "BV9kk");
+    // Node 里没有 location，落到第一 P
+    assert.equal(call.params.cid, 111, "列表页悬停取第一 P 的 cid");
+});
+
+test("[13] 弹幕转字幕不算字幕", async () => {
+    begin();
+    global.getVideo = async () => fakeVideo("BV9ll", [{ subtitle_url: "//x/danmaku.json", lan: "danmaku", ai_type: 0 }]);
+
+    updateVideoInfo("BV9ll", () => {});
+    await tick(60);
+
+    assert.equal(subtitleMessages().length, 0, "弹幕不是台词，不能拿去当字幕");
+    assert.equal(summaryMessages()[0].payload.subtitleKind, "");
 });

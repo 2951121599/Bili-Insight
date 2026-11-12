@@ -12,10 +12,11 @@
 const DEFAULT_API_BASE = "https://api.deepseek.com";
 const DEFAULT_API_MODEL = "deepseek-flash";
 const REQUEST_TIMEOUT_MS = 45000;
-const MAX_TRANSCRIPT_CHARS = 60000;
+// 字幕每行现在带 [mm:ss] 前缀，同样的时长会比以前长一截，所以额度上调
+const MAX_TRANSCRIPT_CHARS = 80000;
 
-// 提示词改了就加一，旧缓存自动失效
-const PROMPT_VERSION = 2;
+// 提示词或响应结构改了就加一，旧缓存自动失效
+const PROMPT_VERSION = 3;
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const CACHE_MAX_ENTRIES = 300;
 const CACHE_PREFIX = "bi:c:";
@@ -25,16 +26,18 @@ const CACHE_INDEX_KEY = "bi:c:index";
 const RETRY_STATUS = [429, 500, 502, 503, 504];
 const MAX_RETRIES = 2;
 
-const VERDICT_SYSTEM_PROMPT = `你是浏览器插件里的视频内容审稿编辑。用户把鼠标悬停在 B 站视频卡片上，只想知道一件事：这个视频值不值得花时间看。
+const VERDICT_SYSTEM_PROMPT = `你是浏览器插件里的视频内容审稿编辑。用户把鼠标悬停在 B 站视频卡片上，只想知道一件事：这个视频值不值得花时间看，以及从第几分钟开始看。
 
-我会给你视频的标题、UP 主、分区、时长、互动数据和字幕全文。如果没有字幕，「字幕」一行会注明没有可用字幕。
+我会给你视频的标题、UP 主、分区、时长、互动数据和字幕全文。字幕每一行开头都有 [mm:ss]，表示这句话出现在视频的第几分第几秒。如果没有字幕，「字幕」一行会注明没有可用字幕。
 
 严格只输出一个 JSON 对象，不要 markdown 代码块，不要任何解释文字。字段如下：
 {
   "verdict": "watch" 或 "skim" 或 "skip",
   "score": 0 到 100 的整数，表示值得投入时间的程度,
   "one_line": "30 字以内，一句话说清这视频讲了什么、值不值得看",
-  "points": ["2 到 4 条，每条 25 字以内，必须是视频里真正的信息点，不要复述标题"],
+  "points": [
+    {"text": "25 字以内，视频里真正的信息点，不要复述标题", "at": 该信息点开始出现的秒数}
+  ],
   "signals": {
     "density": "高 或 中 或 低，干货占比",
     "audience": "20 字以内，最适合谁看",
@@ -43,6 +46,12 @@ const VERDICT_SYSTEM_PROMPT = `你是浏览器插件里的视频内容审稿编�
   },
   "outline": "6 到 12 行 Markdown 脑图，行之间用 \\n 分隔；第一行是 # 加 15 字以内主旨；下面每条以 - 开头，用两个空格缩进表示层级，最多三层；每条是精简短语，不要完整句子"
 }
+
+关于 points 和 at，这几条很严格，因为用户会点着 at 跳转：
+- points 给 2 到 4 条，每条 25 字以内，必须是视频里真正讲到的信息点
+- at 是整数秒数，必须来自【字幕】行首的 [mm:ss]，把 mm 乘 60 再加上 ss
+- at 要指向该信息点「开始讲」的那一句，不要指向标题出现的时刻，也不要靠感觉估
+- 没有字幕时，points 里不要输出 at 字段
 
 判定标准：
 - watch：信息密度高、有独特观点或一手材料，完整看完有收益
@@ -421,6 +430,21 @@ function friendlyError(status, detail) {
 
 /* ---------------- 数据结构 ---------------- */
 
+/*
+ * 超长字幕保留首尾，而不是砍掉结尾。
+ * 一小时以上的访谈、直播回放，前半段都在铺垫，「所以结论是」全在最后几分钟里。
+ */
+function clipTranscript(text, limit) {
+    const s = String(text || "");
+    const cap = limit || MAX_TRANSCRIPT_CHARS;
+    if (s.length <= cap) {
+        return s;
+    }
+    const head = Math.floor((cap * 7) / 10);
+    const tail = cap - head;
+    return `${s.slice(0, head)}\n…（中间省略 ${s.length - cap} 个字符）…\n${s.slice(-tail)}`;
+}
+
 function buildUserContent(payload) {
     const p = payload || {};
     const stat = p.stat || {};
@@ -436,10 +460,82 @@ function buildUserContent(payload) {
     lines.push(`【数据】播放 ${stat.view || 0} · 点赞 ${stat.like || 0} · 投币 ${stat.coin || 0} · 收藏 ${stat.favorite || 0} · 分享 ${stat.share || 0} · 评论 ${stat.reply || 0} · 弹幕 ${stat.danmaku || 0}`);
     if (p.desc) lines.push(`【简介】${p.desc}`);
 
-    const transcript = String(p.transcript || "").slice(0, MAX_TRANSCRIPT_CHARS);
+    const transcript = clipTranscript(p.transcript);
     lines.push("");
-    lines.push(transcript ? `【字幕】\n${transcript}` : "【字幕】（本视频没有可用字幕）");
+    if (transcript) {
+        if (p.subtitleKind === "ai") {
+            lines.push("【字幕类型】B 站 AI 识别字幕，可能有同音错字，遇到明显不通的地方按上下文理解");
+        } else if (p.subtitleKind === "human") {
+            lines.push("【字幕类型】UP 主上传或人工校对字幕");
+        }
+        lines.push(`【字幕】\n${transcript}`);
+    } else {
+        lines.push("【字幕】（本视频没有可用字幕）");
+    }
     return lines.join("\n");
+}
+
+const CLOCK_PREFIX = /^\s*\[(\d{1,2}):(\d{2})(?::(\d{2}))?\]\s*/;
+const DEFAULT_DURATION_LIMIT = 86400;
+
+// 从 "[12:30] xxx" 里取秒数，取不到返回 null
+function parseClock(text) {
+    const match = CLOCK_PREFIX.exec(String(text || ""));
+    if (!match) {
+        return null;
+    }
+    const first = Number(match[1]);
+    const second = Number(match[2]);
+    if (match[3] === undefined) {
+        return first * 60 + second;
+    }
+    return first * 3600 + second * 60 + Number(match[3]);
+}
+
+/*
+ * points 统一成 [{text, at}]，at 是秒数或 null。
+ * 模型可能给老格式的字符串，也可能给 {text, at}；字符串带 [mm:ss] 前缀时抽出来当 at。
+ * at 夹到视频时长内——模型偶尔会算出超过时长的秒数，点过去是空进度。
+ */
+function normalizePoints(raw, duration) {
+    if (!Array.isArray(raw)) {
+        return [];
+    }
+    let limit = Math.floor(Number(duration) || 0);
+    if (limit <= 0) {
+        limit = DEFAULT_DURATION_LIMIT;
+    }
+
+    const points = [];
+    for (const item of raw) {
+        let at = null;
+        let text = "";
+        if (item && typeof item === "object") {
+            text = String(item.text || item.point || "").trim();
+            const parsedAt = Number(item.at);
+            at = Number.isFinite(parsedAt) ? Math.round(parsedAt) : null;
+        } else {
+            text = String(item || "").trim();
+        }
+        if (!text) {
+            continue;
+        }
+        if (at === null) {
+            at = parseClock(text);
+        }
+        if (at === null) {
+            points.push({ text: text, at: null });
+        } else {
+            points.push({
+                text: text.replace(CLOCK_PREFIX, "").trim(),
+                at: Math.max(0, Math.min(limit, at)),
+            });
+        }
+        if (points.length === 4) {
+            break;
+        }
+    }
+    return points;
 }
 
 function normalizeVerdict(parsed, payload) {
@@ -452,15 +548,20 @@ function normalizeVerdict(parsed, payload) {
     }
 
     const signals = parsed.signals || {};
-    const points = Array.isArray(parsed.points)
-        ? parsed.points.filter(Boolean).slice(0, 4).map((p) => String(p).trim())
-        : [];
+    const p = payload || {};
+    const hasTranscript = !!String(p.transcript || "").trim();
+    let caveat = "";
+    if (!hasTranscript) {
+        caveat = "无字幕 · 仅依据标题与简介推断";
+    } else if (p.subtitleKind === "ai") {
+        caveat = "AI 字幕 · 识别可能有错字";
+    }
 
     return {
         verdict: verdict,
         score: score,
         summary: String(parsed.one_line || parsed.summary || "").trim(),
-        points: points,
+        points: normalizePoints(parsed.points, p.duration),
         signals: {
             density: String(signals.density || ""),
             audience: String(signals.audience || ""),
@@ -468,9 +569,7 @@ function normalizeVerdict(parsed, payload) {
             cost: String(signals.cost || ""),
         },
         outline: normalizeOutline(parsed.outline),
-        caveat: String((payload && payload.transcript) || "").trim()
-            ? ""
-            : "无字幕 · 仅依据标题与简介推断",
+        caveat: caveat,
     };
 }
 

@@ -1,5 +1,17 @@
 document.addEventListener("mouseover", showProfileDebounce);
-document.addEventListener("mousemove", (ev) => videoProfileCard.updateCursor(ev.pageX, ev.pageY));
+document.addEventListener("mousemove", (ev) => {
+    // 指针在卡片上时不要跟着动，否则刚移到时间戳上卡片就飘走了
+    if (videoProfileCard.hovering) {
+        return;
+    }
+    videoProfileCard.updateCursor(ev.pageX, ev.pageY);
+});
+
+// 指针是否落在插件自己的卡片里
+function isInsideCard(node) {
+    const el = videoProfileCard && videoProfileCard.el;
+    return !!(el && node && typeof el.contains === "function" && el.contains(node));
+}
 
 // 词云默认关掉：判断「值不值得看」用不上它，却会占掉卡片首屏
 biliInsightOptions = {
@@ -127,6 +139,11 @@ function showProfileDebounce(event) {
     const target = event.target;
     const pageX = event.pageX;
     const pageY = event.pageY;
+
+    // 悬停在自己的卡片上：既不该重新定位，也不该把卡片收掉
+    if (isInsideCard(target)) {
+        return;
+    }
 
     clearTimeout(hoverTimer);
     hoverTarget = target;

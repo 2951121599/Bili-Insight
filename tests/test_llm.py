@@ -32,7 +32,8 @@ def test_build_user_content_keeps_every_field():
         assert piece in text, piece
     assert "播放 120000" in text
     assert "【简介】自费购买，无广" in text
-    assert "【字幕】\n今天我们测三款降噪耳机" in text
+    assert "【字幕】\n[00:00] 今天我们测三款降噪耳机" in text
+    assert "【字幕类型】UP 主上传或人工校对字幕" in text, "字幕来源要告诉模型，AI 字幕要按可能有错字处理"
 
 
 def test_build_user_content_marks_missing_transcript():
@@ -51,8 +52,31 @@ def test_transcript_is_capped():
     text = llm.build_user_content({"title": "长视频", "transcript": huge})
     # 注意别用 text.count("字")——"字幕"这个标签里本身就有个「字」
     transcript = text.split("【字幕】\n")[1]
-    assert len(transcript) == llm.MAX_TRANSCRIPT_CHARS
-    assert len(text) < llm.MAX_TRANSCRIPT_CHARS + 300
+    assert len(transcript) < llm.MAX_TRANSCRIPT_CHARS + 60, "超长字幕要收敛到额度附近"
+
+
+def test_long_transcript_keeps_the_ending():
+    """原来直接 slice(0, N)，长视频的结论段全被砍掉。"""
+    head = "开" * 100000
+    tail = "尾" * 100000
+    text = llm.build_user_content({"title": "长视频", "transcript": head + tail})
+    transcript = text.split("【字幕】\n")[1]
+
+    assert transcript.startswith("开"), "首段要保留"
+    assert transcript.endswith("尾"), "尾段必须保留，结论通常在这里"
+    assert "中间省略" in transcript, "省略的部分要标注出来"
+    # 首尾都留，且总长仍在额度内
+    assert transcript.count("开") + transcript.count("尾") == llm.MAX_TRANSCRIPT_CHARS
+
+
+def test_short_transcript_is_untouched():
+    text = llm.build_user_content({"title": "短视频", "transcript": "[00:00] 一句话"})
+    assert transcript_of(text) == "[00:00] 一句话"
+    assert "省略" not in text
+
+
+def transcript_of(text: str) -> str:
+    return text.split("【字幕】\n")[1]
 
 
 @pytest.mark.parametrize(
@@ -100,6 +124,77 @@ def test_normalize_verdict_drops_non_list_points():
     assert result["points"] == []
 
 
+# --- 要点的时间戳 ---------------------------------------------------------
+
+
+def test_points_accept_legacy_strings():
+    """老版本提示词让模型只给字符串，插件升级后旧响应也不能崩。"""
+    result = llm._normalize_verdict({"points": ["A 款降噪最强", "B 款人声通透"]}, PAYLOAD)
+    assert result["points"] == [
+        {"text": "A 款降噪最强", "at": None},
+        {"text": "B 款人声通透", "at": None},
+    ]
+
+
+def test_points_parse_clock_prefix_from_string():
+    result = llm._normalize_verdict({"points": ["[12:30] C 款性价比最高"]}, PAYLOAD)
+    assert result["points"] == [{"text": "C 款性价比最高", "at": 750}], "前缀要挪到 at，正文里不能重复"
+
+
+def test_points_clamped_to_duration():
+    """模型偶尔算出超过时长的秒数，点过去是空进度。"""
+    result = llm._normalize_verdict(
+        {"points": [{"text": "收尾", "at": 99999}, {"text": "负数", "at": -5}]},
+        PAYLOAD,
+    )
+    assert result["points"][0]["at"] == PAYLOAD["duration"]
+    assert result["points"][1]["at"] == 0
+
+
+def test_points_without_at_stay_null():
+    result = llm._normalize_verdict({"points": [{"text": "没有秒数"}]}, PAYLOAD)
+    assert result["points"] == [{"text": "没有秒数", "at": None}], "没有 at 就不该渲染时间戳"
+
+
+def test_points_capped_at_four():
+    result = llm._normalize_verdict(
+        {"points": [{"text": f"要点{i}", "at": i * 10} for i in range(10)]},
+        PAYLOAD,
+    )
+    assert len(result["points"]) == 4
+
+
+def test_caveat_mentions_ai_subtitle():
+    """AI 字幕有同音错字，卡片要如实说明，别让用户以为结论确定。"""
+    ai_payload = dict(PAYLOAD, subtitleKind="ai")
+    assert llm._normalize_verdict({}, ai_payload)["caveat"] == "AI 字幕 · 识别可能有错字"
+
+    no_sub = dict(PAYLOAD, transcript="", subtitleKind="")
+    assert "无字幕" in llm._normalize_verdict({}, no_sub)["caveat"]
+
+
+def test_prompt_requires_timestamps():
+    assert "[mm:ss]" in llm.VERDICT_SYSTEM_PROMPT
+    assert '"at"' in llm.VERDICT_SYSTEM_PROMPT
+
+
+def test_extension_prompt_matches_backend():
+    """扩展里还有一份同样的提示词，两条路径必须一起改，否则行为不一致。
+
+    这里查的是源码里的关键标记，不是运行时行为——两套实现一个在 Python
+    一个在 JS，能自动对齐的只有这些约定。
+    """
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parent.parent
+    bg = (root / "chrome-extension" / "bg_page.js").read_text(encoding="utf-8")
+    py = (root / "llm.py").read_text(encoding="utf-8")
+
+    for marker in ("[mm:ss]", '"at"', "点着 at 跳转", "AI 识别字幕", "中间省略"):
+        assert marker in bg, f"扩展侧缺少 {marker}，和后端已经漂移"
+        assert marker in py, f"后端缺少 {marker}"
+
+
 def test_normalize_verdict_keeps_at_most_four_points():
     result = llm._normalize_verdict({"points": [f"p{i}" for i in range(9)], "score": 50}, PAYLOAD)
     assert len(result["points"]) == 4
@@ -128,7 +223,7 @@ def test_verdict_single_call_returns_both_parts(llm_env):
     assert result["verdict"] == "watch"
     assert result["score"] == 82
     assert result["summary"] == MODEL_JSON["one_line"]
-    assert result["points"] == MODEL_JSON["points"]
+    assert result["points"] == MODEL_JSON["points"], "要点要带上秒数，卡片靠它做跳转"
     assert result["outline"].startswith("# 降噪耳机实测")
     assert result["caveat"] == ""
 

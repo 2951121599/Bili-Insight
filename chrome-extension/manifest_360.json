@@ -1,6 +1,6 @@
 {
     "name": "Bili Insight - 借助GPT洞察B站视频内容",
-    "version": "0.4.0",
+    "version": "0.5.0",
     "manifest_version": 3,
     "description": "以卡片可视化形式，更快地了解视频的基本信息和总结内容。",
     "icons": {

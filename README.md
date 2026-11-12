@@ -17,11 +17,15 @@ Bili Insight 是一个 [Chrome 插件](https://chrome.google.com/webstore/detail
 悬停后弹出的卡片，从上到下：
 
 * **一句结论 + 0-100 分**，三档：值得看 / 扫一眼 / 跳过
-* **2-4 条真正的信息点**，不复述标题
+* **2-4 条真正的信息点**，每条前面带时间戳（如 `12:30`），**点一下直接跳到视频对应进度**
 * **四个辅助判断**：密度、适合谁看、同质化风险、时间成本
 * 点赞、投币、收藏、分享、投稿时间、时长、分区标签
 * 可选的词云与思维导图（词云默认关闭）
 * 视频没有字幕时，卡片会明确标注「无字幕 · 仅依据标题与简介推断」
+
+时间戳是这一版的重点：字幕每行会带上 `[mm:ss]` 一起交给模型，模型只在字幕里真的出现过的位置给出秒数，服务端再把超出时长的值夹回区间。如果当前就在这个视频的播放页，点时间戳是直接 seek 播放器；在列表页悬停则新标签打开 `?t=` 链接。
+
+字幕来源也补全了：先看 `/x/web-interface/view`，不够再查 `/x/player/wbi/v2`（按 cid 取，分 P 跟当前 P）。候选按**人工中文 CC > AI 中文 > 其它语言**排序，AI 字幕会在卡片上标「AI 字幕 · 识别可能有错字」。超长字幕改成首 70% + 尾 30% 采样，长视频的结论段不会再被砍掉。
 
 ## 安装
 
@@ -95,18 +99,18 @@ DEEPSEEK_API_KEY=sk-xxx RELAY_TOKEN=your-token uvicorn api:app --port 8000
 pip install -r requirements-dev.txt
 python -m pytest
 
-# 扩展脚本（Node 20+，不需要 npm install）
+# 扩展脚本（Node 22+，不需要 npm install）
 node --test tests/js/*.js
 ```
 
 | 文件 | 守的是什么 |
 | --- | --- |
-| `tests/test_llm.py` | 提示词拼装、模型输出的脏数据收敛（分数越界 / points 非数组 / JSON 带围栏 / 缺一级标题）、单次调用、错误路径 |
+| `tests/test_llm.py` | 提示词拼装、模型输出的脏数据收敛（分数越界 / points 非数组 / JSON 带围栏 / 缺一级标题）、要点时间戳的解析与夹取、超长字幕首尾采样、单次调用、错误路径 |
 | `tests/test_api.py` | 六个端点、relay 鉴权 401/503、坏请求 400、上游失败 502 |
 | `tests/test_manifest.py` | `host_permissions` 是否覆盖全部网络调用、声明的文件是否都存在且非空、两份 manifest 有没有漂移 |
-| `tests/js/test_bg_page.js` | 一次悬停只花一次调用、缓存命中/过期/版本失效、429 与 `Retry-After`、5xx 上限、滑走取消、字幕响应形状 |
-| `tests/js/test_biliapi.js` | 请求编排：一次悬停一条请求、同视频去重、A→B 时 abort、getVideo 失败后能重试 |
-| `tests/js/test_content_dom.js` | 五个脚本按 manifest 顺序能加载、bvid 提取的各种边界、时长显示 |
+| `tests/js/test_bg_page.js` | 一次悬停只花一次调用、缓存命中/过期/版本失效、429 与 `Retry-After`、5xx 上限、滑走取消、字幕响应形状、`points` 的 `at` 归一化 |
+| `tests/js/test_biliapi.js` | 请求编排：一次悬停一条请求、同视频去重、A→B 时 abort、getVideo 失败后能重试；字幕来源择优（人工 CC > AI > 其它）、分 P 取 cid、player 接口失败回退、弹幕转字幕要忽略 |
+| `tests/js/test_content_dom.js` | 五个脚本按 manifest 顺序能加载、bvid 提取的各种边界、时长与时间戳显示、要点 HTML 转义、点时间戳时 seek 播放器 / 新标签打开 |
 
 `test_manifest.py` 看起来最不起眼，但它对应真实事故：MV3 里没声明 `host_permissions`，service worker 的 `fetch` 会被直接拦掉，而页面上毫无反应——插件「突然什么都不做」，却没有任何报错。
 

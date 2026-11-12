@@ -53,22 +53,119 @@ async function biliGet(url, params) {
 }
 
 async function getVideo(bvid) {
-    return await biliGet(`${BILIBILI_API_URL}/x/web-interface/view`, {
+    const data = await biliGet(`${BILIBILI_API_URL}/x/web-interface/view`, {
         bvid: bvid
-    })
-        .then((data) => {
-            let video = data["data"]
-            if (!video) {
-                return
+    });
+    return (data || {})["data"] || null;
+}
+
+/*
+ * 字幕候选的优先级：人工中文 CC > AI 中文 > 其它语言人工 > 其它语言 AI。
+ * 人工 CC 断句准、术语对，AI 字幕会有同音错字，所以哪怕多一次请求也优先人工。
+ */
+function describeSubtitle(item) {
+    if (!item) {
+        return null;
+    }
+    const url = normalizeSubtitleUrl(item["subtitle_url"] || "");
+    const lan = String(item["lan"] || "");
+    // 弹幕转字幕不是真正的台词，不要
+    if (!url || lan === "danmaku") {
+        return null;
+    }
+    const isAI = Number(item["ai_type"]) === 1 || /^ai-/i.test(lan);
+    return {
+        url: url,
+        lan: lan,
+        isAI: isAI,
+        isChinese: /^zh/i.test(lan) || /^ai-zh/i.test(lan),
+        label: String(item["lan_doc"] || lan || (isAI ? "AI 字幕" : "字幕")),
+    };
+}
+
+function subtitleRank(sub) {
+    if (sub.isChinese && !sub.isAI) {
+        return 0;
+    }
+    if (sub.isChinese) {
+        return 1;
+    }
+    return sub.isAI ? 3 : 2;
+}
+
+function pickBestSubtitle(candidates) {
+    const usable = (candidates || []).filter(Boolean);
+    if (!usable.length) {
+        return null;
+    }
+    return usable.slice().sort((a, b) => subtitleRank(a) - subtitleRank(b))[0];
+}
+
+/*
+ * 分P 视频每 P 有自己的 cid 和字幕。视频页带 ?p=N 时跟着当前 P，
+ * 列表页悬停则取第一 P（用户还没选 P，第一 P 最能代表这个视频）。
+ */
+function currentCid(video) {
+    const pages = (video && video["pages"]) || [];
+    if (!pages.length) {
+        return (video && video["cid"]) || 0;
+    }
+    let index = 0;
+    if (typeof location !== "undefined" && location && location.search) {
+        const match = String(location.search).match(/[?&]p=(\d+)/);
+        if (match) {
+            const p = Number(match[1]) - 1;
+            if (p >= 0 && p < pages.length) {
+                index = p;
             }
-            // subtitle 字段在无字幕视频上可能整个缺失，也可能 list 为空
-            const subtitle = video["subtitle"];
-            const subList = (subtitle && subtitle["list"]) || [];
-            if (subList.length && subList[0]["subtitle_url"]) {
-                video.subtitleUrl = subList[0]["subtitle_url"];
+        }
+    }
+    return pages[index]["cid"] || (video && video["cid"]) || 0;
+}
+
+/*
+ * 字幕来源有两处，缺一不可：
+ *   - /x/web-interface/view 的 subtitle.list：只覆盖部分场景，分P 和纯 AI 字幕经常是空的
+ *   - /x/player/wbi/v2 的 subtitle.subtitles：按 cid 给全量，含 ai_type 标记
+ * player 接口要登录态，没登录会返回 code != 0，此时退回 view 的结果。
+ */
+async function getSubtitleCandidates(video) {
+    const candidates = [];
+    const fromView = ((video && video["subtitle"]) || {})["list"] || [];
+    for (const item of fromView) {
+        const described = describeSubtitle(item);
+        if (described) {
+            candidates.push(described);
+        }
+    }
+
+    const cid = currentCid(video);
+    if (cid) {
+        try {
+            const data = await biliGet(`${BILIBILI_API_URL}/x/player/wbi/v2`, {
+                bvid: (video && video["bvid"]) || "",
+                cid: cid,
+            });
+            const playerSubs = (((data || {})["data"] || {})["subtitle"] || {})["subtitles"] || [];
+            for (const item of playerSubs) {
+                const described = describeSubtitle(item);
+                if (described) {
+                    candidates.push(described);
+                }
             }
-            return video;
-        })
+        } catch (e) {
+            // player 接口挂了不影响主流程，view 的结果兜底
+        }
+    }
+
+    const seen = new Set();
+    return candidates.filter((sub) => {
+        if (seen.has(sub.url)) {
+            return false;
+        }
+        seen.add(sub.url);
+        return true;
+    });
 }
 
 
@@ -235,6 +332,9 @@ function buildPayload(video) {
             danmaku: stat["danmaku"] || 0,
         },
         transcript: video["transcript"] || "",
+        // human / ai / 空；AI 字幕会有同音错字，模型和卡片都要如实标注
+        subtitleKind: video["subtitleKind"] || "",
+        bvid: video["bvid"] || "",
     };
 }
 
@@ -326,6 +426,35 @@ function normalizeSubtitleUrl(url) {
     return url;
 }
 
+// 秒 -> mm:ss（超过一小时给 h:mm:ss）
+function secondsToClock(seconds) {
+    const total = Math.max(0, Math.floor(Number(seconds) || 0));
+    const hours = Math.floor(total / 3600);
+    const minutes = Math.floor((total % 3600) / 60);
+    const secs = total % 60;
+    const mm = String(minutes).padStart(2, "0");
+    const ss = String(secs).padStart(2, "0");
+    return hours > 0 ? `${hours}:${mm}:${ss}` : `${mm}:${ss}`;
+}
+
+/*
+ * 每句字幕前面带上 [mm:ss]。
+ * 这是「要点能跳到第几分钟」的前提：模型只有看到时间标记，才可能输出秒数；
+ * 没有标记时它只能凭感觉编一个，跳过去是错的位置。
+ */
+function buildTranscript(body) {
+    const lines = [];
+    for (const el of body) {
+        const text = String((el && el["content"]) || "").replace(/\s+/g, " ").trim();
+        if (!text) {
+            continue;
+        }
+        const at = Number(el && el["from"]);
+        lines.push(Number.isFinite(at) ? `[${secondsToClock(at)}] ${text}` : text);
+    }
+    return lines.join("\n");
+}
+
 function updateVideoInfo(videoId, callback) {
     if (userInfoCache.has(videoId) && cacheValid(userInfoCache.get(videoId))) {
         let cache = userInfoCache.get(videoId);
@@ -349,25 +478,33 @@ function updateVideoInfo(videoId, callback) {
     const callbacks = [callback];
     pendingByVideo.set(videoId, callbacks);
 
-    getVideo(videoId).then((video) => {
+    getVideo(videoId).then(async (video) => {
         if (!video) {
             pendingByVideo.delete(videoId);
             return
+        }
+        // bvid 兜底：view 接口正常会带，但万一缺失就用卡片上的
+        if (!video["bvid"]) {
+            video["bvid"] = videoId;
         }
 
         // 先渲染互动数据，不等模型
         updateStats(videoId, callbacks, video);
 
-        if (!video.subtitleUrl) {
+        const subtitle = pickBestSubtitle(await getSubtitleCandidates(video));
+        if (!subtitle) {
             // 无字幕：用标题 + 简介做轻量判断，卡片上会标注「无字幕」
             updateUI(videoId, callbacks, video, false);
             return
         }
 
+        video.subtitleUrl = subtitle.url;
+        video.subtitleKind = subtitle.isAI ? "ai" : "human";
+
         chrome.runtime.sendMessage( //goes to bg_page.js
             JSON.stringify({
                 type: 'subtitleUrl',
-                url: normalizeSubtitleUrl(video.subtitleUrl),
+                url: subtitle.url,
             }),
             (data) => {
                 if (chrome.runtime.lastError) {
@@ -376,10 +513,7 @@ function updateVideoInfo(videoId, callback) {
                 }
                 const body = data && data["body"];
                 if (Array.isArray(body) && body.length) {
-                    video.transcript = body
-                        .map((el) => el["content"] || "")
-                        .join("\n")
-                        .trim();
+                    video.transcript = buildTranscript(body);
                 }
                 updateUI(videoId, callbacks, video, !!video.transcript);
             } //your callback
