@@ -1,0 +1,83 @@
+name: CI
+
+# 这套 CI 的职责很窄：防止「插件在浏览器里静默不工作」这类问题再次发生。
+# 所有用例都不访问外网——模型请求打到本进程里的假上游。
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  javascript:
+    name: 扩展脚本 / Node ${{ matrix.node }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ["20", "22"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: 语法检查
+        run: |
+          node --check chrome-extension/bg_page.js
+          node --check chrome-extension/scripts/biliapi.js
+          node --check chrome-extension/scripts/ui.js
+          node --check chrome-extension/popup/popup.js
+          node --check chrome-extension/content-scripts/content.js
+
+      - name: 行为测试
+        run: node --test tests/js/*.js
+
+  python:
+    name: 后端 / Python ${{ matrix.python }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: 单元测试
+        run: python -m pytest
+
+  manifests:
+    name: manifest 一致性
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # 只跑静态校验，不装任何运行时依赖——这一步要永远保持「秒级可过」
+      - name: 校验两个 manifest
+        run: |
+          pip install pytest
+          python -m pytest tests/test_manifest.py -v
