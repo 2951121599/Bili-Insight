@@ -115,7 +115,10 @@ async function getSubtitleUrl(data, onSuccess) {
             onSuccess({ body: null, error: `字幕请求失败 HTTP ${resp.status}` });
             return;
         }
-        onSuccess({ body: await resp.json() });
+        // 必须原样透传：字幕接口返回的就是 { body: [{ content, from, to }, ...] }，
+        // 内容脚本直接读 data.body。再包一层就永远是「无字幕」。
+        const json = await resp.json();
+        onSuccess(json && typeof json === "object" ? json : { body: null });
     } catch (e) {
         onSuccess({ body: null, error: String(e) });
     }

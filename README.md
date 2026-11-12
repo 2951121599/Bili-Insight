@@ -86,6 +86,34 @@ DEEPSEEK_API_KEY=sk-xxx RELAY_TOKEN=your-token uvicorn api:app --port 8000
 
 没有设置 `RELAY_TOKEN` 时转发端点返回 503，避免变成公开的免费代理。
 
+## 测试
+
+所有用例**都不访问外网**：模型请求打到测试进程里起的假上游（随机端口，仅本机可见），B 站接口和 DOM 全部用桩替代。
+
+```bash
+# 后端 + manifest 校验
+pip install -r requirements-dev.txt
+python -m pytest
+
+# 扩展脚本（Node 20+，不需要 npm install）
+node --test tests/js/*.js
+```
+
+| 文件 | 守的是什么 |
+| --- | --- |
+| `tests/test_llm.py` | 提示词拼装、模型输出的脏数据收敛（分数越界 / points 非数组 / JSON 带围栏 / 缺一级标题）、单次调用、错误路径 |
+| `tests/test_api.py` | 六个端点、relay 鉴权 401/503、坏请求 400、上游失败 502 |
+| `tests/test_manifest.py` | `host_permissions` 是否覆盖全部网络调用、声明的文件是否都存在且非空、两份 manifest 有没有漂移 |
+| `tests/js/test_bg_page.js` | 一次悬停只花一次调用、缓存命中/过期/版本失效、429 与 `Retry-After`、5xx 上限、滑走取消、字幕响应形状 |
+| `tests/js/test_biliapi.js` | 请求编排：一次悬停一条请求、同视频去重、A→B 时 abort、getVideo 失败后能重试 |
+| `tests/js/test_content_dom.js` | 五个脚本按 manifest 顺序能加载、bvid 提取的各种边界、时长显示 |
+
+`test_manifest.py` 看起来最不起眼，但它对应真实事故：MV3 里没声明 `host_permissions`，service worker 的 `fetch` 会被直接拦掉，而页面上毫无反应——插件「突然什么都不做」，却没有任何报错。
+
+CI（`.github/workflows/ci.yml`）在 Node 22/24、Python 3.10/3.12 上各跑一遍，外加一个只做静态校验的 manifest job。
+
+**测不到的部分**：真实 B 站页面的悬停、真实 Key 的线上请求。这两件事仍需手动验：悬停一个有字幕的视频，确认卡片出结论且 `chrome.storage.local` 里出现 `bi:c:BVxxx:*`；刷新后再悬停同一视频，Network 里不该有新的 `chat/completions`。
+
 ## 加入我们
 
 <b>1. 添加个人联系方式</b>
