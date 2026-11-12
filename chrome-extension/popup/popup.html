@@ -1,43 +1,135 @@
-<html lang="en">
+<html lang="zh-CN">
 
 <head>
     <meta charset="UTF-8" />
     <title>Bili Insight</title>
     <link rel="stylesheet" href="./options.css">
+    <style>
+        body {
+            padding: 16px 20px;
+            width: 340px;
+            margin: 0;
+            font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+        }
+
+        h1 {
+            font-size: 15px;
+            margin: 0 0 4px;
+        }
+
+        .hint {
+            font-size: 12px;
+            color: #9499a0;
+            line-height: 1.6;
+            margin: 0 0 12px;
+        }
+
+        .item {
+            padding: 5px 0;
+            font-size: 12px;
+        }
+
+        .item label {
+            display: block;
+            color: #61666d;
+            margin-bottom: 3px;
+        }
+
+        .item input {
+            width: 100%;
+            height: 28px;
+            padding: 0 8px;
+            font-size: 12px;
+            border: 1px solid #e3e5e7;
+            border-radius: 4px;
+            outline: none;
+            box-sizing: border-box;
+        }
+
+        .item input:focus {
+            border-color: #00a1d6;
+        }
+
+        .item label.inline {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #61666d;
+            margin-bottom: 0;
+        }
+
+        .item label.inline input {
+            width: auto;
+            height: auto;
+            margin: 0;
+        }
+
+        .row {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .row .btn {
+            flex: 1;
+        }
+
+        .btn-ghost {
+            background-color: #f4f5f7;
+            color: #61666d;
+        }
+
+        #status {
+            min-height: 18px;
+            font-size: 12px;
+            line-height: 18px;
+        }
+
+        .footer {
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px solid #f1f2f3;
+            font-size: 11px;
+            color: #9499a0;
+            line-height: 1.6;
+        }
+    </style>
 </head>
 
-<body style="padding: 20px 100px;">
-    <h1>B站视频内容总结预览插件：通过使用这个插件来更快地了解视频的内容。</h1>
+<body>
+    <h1>Bili Insight</h1>
+    <p class="hint">悬停在 B 站视频卡片上，直接告诉你这视频值不值得看。Key 只存在本机，不经过任何第三方服务器。</p>
+
     <div class="item">
-        <label for="api-key">apikey:</label>
-        <input type="password" id="api-key" style="width: 300px;">
+        <label for="api-key">API Key</label>
+        <input type="password" id="api-key" placeholder="sk-...">
     </div>
-    <div id="status" class="item"></div>
     <div class="item">
+        <label for="api-base">接口地址</label>
+        <input type="text" id="api-base" placeholder="https://api.deepseek.com">
+    </div>
+    <div class="item">
+        <label for="api-model">模型</label>
+        <input type="text" id="api-model" placeholder="deepseek-flash">
+    </div>
+    <div class="item">
+        <label class="inline" for="enable-wordcloud">
+            <input type="checkbox" id="enable-wordcloud">
+            显示词云（会占掉卡片首屏，默认关闭）
+        </label>
+    </div>
+
+    <div class="row">
         <button id="save" class="btn btn-primary">保存</button>
-    </div>
-    <p>
-
-        用户是 B 站的视频观众，他们希望通过使用这个插件来更好地理解视频的内容。
-
-        当浏览B站时，把鼠标悬停至视频标题时，插件会自动展示内容总结，通过词云/思维导图等方式以可视化的形式呈现给用户，方便用户快速了解视频内容。
-
-        * up主视频字幕、标题、简介、tag生成的内容总结
-    </p>
-
-    <div>
-        <img src="/images/Insight_640x400.png" width="640px" alt="Bili Insight,洞察B站视频内容插件." />
+        <button id="test" class="btn btn-ghost">测试连接</button>
     </div>
 
+    <div id="status" class="item"></div>
 
-    <h3>
-        代码
-    </h3>
-    <ul>
-        <li><a href="https://github.com/wangqmshf/Bili-Insight" target="_blank">Bili-Insight</a></li>
-
-    </ul>
-
+    <div class="footer">
+        任何 OpenAI 兼容接口都能用，换成自建网关或转发服务只需改「接口地址」。<br>
+        默认 deepseek-flash：1M 上下文，整条字幕一次读完。
+    </div>
 
     <script src="popup.js"></script>
 </body>

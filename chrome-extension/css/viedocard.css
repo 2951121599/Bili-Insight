@@ -76,7 +76,7 @@
 }
 
 #word-cloud-canvas-wrapper-bi.canvas-show {
-    height: 187.5px;
+    height: 190px;
 }
 
 .markmap>svg {
@@ -93,4 +93,108 @@
 
 .markmap-wrapper.canvas-show {
     height: 200px;
+}
+
+/* ---------- 「值不值得看」结论区 ---------- */
+
+#biliinsight-video-card .idc-verdict {
+    padding: 10px 35px 9px 40px;
+    border-bottom: 1px solid #f1f2f3;
+}
+
+#biliinsight-video-card .idc-verdict-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 5px;
+}
+
+#biliinsight-video-card .idc-verdict-chip {
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 22px;
+    padding: 0 8px;
+    border-radius: 4px;
+    color: #fff;
+}
+
+#biliinsight-video-card .verdict-watch {
+    background-color: #00b578;
+}
+
+#biliinsight-video-card .verdict-skim {
+    background-color: #ff9500;
+}
+
+#biliinsight-video-card .verdict-skip {
+    background-color: #9aa0a6;
+}
+
+#biliinsight-video-card .idc-verdict-score {
+    font-size: 12px;
+    color: #9499a0;
+}
+
+#biliinsight-video-card .idc-verdict-score::after {
+    content: " 分";
+}
+
+#biliinsight-video-card .idc-verdict-line {
+    font-size: 13px;
+    color: #18191c;
+    line-height: 1.55;
+}
+
+#biliinsight-video-card .idc-points {
+    margin: 6px 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+#biliinsight-video-card .idc-points li {
+    position: relative;
+    padding-left: 10px;
+    font-size: 12px;
+    color: #61666d;
+    line-height: 1.7;
+}
+
+#biliinsight-video-card .idc-points li::before {
+    content: "";
+    position: absolute;
+    left: 2px;
+    top: 8px;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: #c9ccd0;
+}
+
+#biliinsight-video-card .idc-signals {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 6px;
+    margin-top: 7px;
+}
+
+#biliinsight-video-card .idc-signal {
+    padding: 2px 6px;
+    font-size: 11px;
+    line-height: 16px;
+    color: #61666d;
+    background: #f4f5f7;
+    border-radius: 3px;
+}
+
+#biliinsight-video-card .idc-signal i {
+    font-style: normal;
+    color: #9499a0;
+    margin-right: 4px;
+}
+
+#biliinsight-video-card .idc-caveat {
+    margin-top: 6px;
+    font-size: 11px;
+    line-height: 1.5;
+    color: #ff7d00;
 }
