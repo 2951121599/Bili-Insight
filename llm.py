@@ -43,7 +43,8 @@ VERDICT_SYSTEM_PROMPT = """你是浏览器插件里的视频内容审稿编辑�
     "audience": "20 字以内，最适合谁看",
     "duplication": "20 字以内，同质化风险",
     "cost": "20 字以内，时长与推荐观看方式"
-  }
+  },
+  "outline": "6 到 12 行 Markdown 脑图，行之间用 \\n 分隔；第一行是 # 加 15 字以内主旨；下面每条以 - 开头，用两个空格缩进表示层级，最多三层；每条是精简短语，不要完整句子"
 }
 
 判定标准：
@@ -193,6 +194,21 @@ def _parse_json_loose(text: str):
         return None
 
 
+def _normalize_outline(value) -> str:
+    """把模型给的 outline 收敛成 markmap 能吃的 12 行以内 Markdown。"""
+    if isinstance(value, list):
+        text = "\n".join(str(item) for item in value)
+    else:
+        text = str(value or "")
+    text = _strip_code_fence(text).strip()
+    if not text:
+        return ""
+    lines = [line for line in text.split("\n") if line.strip()]
+    if not lines[0].startswith("#"):
+        lines.insert(0, "# 内容大纲")
+    return "\n".join(lines[:12])
+
+
 def _normalize_verdict(parsed: dict, payload) -> dict:
     try:
         score = int(round(float(parsed.get("score", 50))))
@@ -223,12 +239,16 @@ def _normalize_verdict(parsed: dict, payload) -> dict:
             "duplication": str(signals.get("duplication") or ""),
             "cost": str(signals.get("cost") or ""),
         },
+        "outline": _normalize_outline(parsed.get("outline")),
         "caveat": "" if has_transcript else "无字幕 · 仅依据标题与简介推断",
     }
 
 
 def verdict(payload, api_key: str = None, base_url: str = None, model: str = None) -> dict:
-    """给出「值不值得看」的结构化判断。"""
+    """给出「值不值得看」的结构化判断，附带脑图大纲。
+
+    结论和大纲在一次调用里出，避免把同一份字幕重复发两遍。
+    """
     client = get_client(api_key, base_url)
     content = _chat(
         client,
@@ -238,7 +258,7 @@ def verdict(payload, api_key: str = None, base_url: str = None, model: str = Non
             {"role": "user", "content": build_user_content(payload)},
         ],
         json_mode=True,
-        max_tokens=800,
+        max_tokens=1200,
     )
 
     parsed = _parse_json_loose(content)

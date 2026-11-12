@@ -11,42 +11,39 @@ chrome.storage.sync.get(biliInsightOptions, function (items) {
     biliInsightOptions = items;
 });
 
-function getVideoFromLink(url) {
-    var vid = url.split("/")[4];
-    if (vid.startsWith('BV')) {
-        if (vid.indexOf('?') > 5) {
-            return vid.slice(0, vid.indexOf('?'));
-        }
+const VIDEO_LINK_SELECTOR = 'a[href*="/video/BV"]';
 
-        return vid;
+function getVideoFromLink(url) {
+    if (!url) {
+        return null;
     }
+    const match = String(url).match(/\/video\/(BV[0-9A-Za-z]+)/);
+    return match ? match[1] : null;
 }
 
-async function getVideoId(target) {
-    if (target.tagName == "DIV" && target.classList.contains("card-box")) {
-        return getVideoFromLink(target.childNodes[1].firstChild.href);
+/*
+ * 原来这里是逐层取 childNodes[0].firstChild.href。
+ * 只要 B 站稍微改一下 DOM，就会抛 TypeError，而 showProfile 又是异步调用，
+ * 异常被 promise 吞掉，表现就是「插件突然什么都不做了」。
+ * 改成在卡片范围内找视频链接，找不到就返回 null。
+ */
+function getVideoId(target) {
+    if (!target || typeof target.querySelector !== "function") {
+        return null;
     }
-    if (target.tagName == "A" && target.classList.contains("dynamic-video-item")) {
-        return getVideoFromLink(target.href);
+    let link = null;
+    if (target.matches && target.matches(VIDEO_LINK_SELECTOR)) {
+        link = target;
+    } else {
+        link = target.querySelector(VIDEO_LINK_SELECTOR);
     }
-
-    if (target.childNodes[0].tagName == "A") {
-        return getVideoFromLink(target.childNodes[0].href);
+    if (!link) {
+        return null;
     }
-
-    let vid = getVideoFromLink(target.childNodes[0].firstChild.href);
-
-
-
-
-    if (vid) {
-        return vid;
-    }
-
+    return getVideoFromLink(link.getAttribute("href") || link.href);
 }
 
 function getTarget(target) {
-
     for (let videoLink of [
         target,
         target?.parentNode,
@@ -56,7 +53,6 @@ function getTarget(target) {
         target?.parentNode?.parentNode?.parentNode?.parentNode?.parentNode,
         target?.parentNode?.parentNode?.parentNode?.parentNode?.parentNode?.parentNode]) {
         if (videoLink) {
-
             if (videoLink.tagName == "DIV" && videoLink.classList.contains("video-card")) {
                 return videoLink;
             }
@@ -81,35 +77,61 @@ function getTarget(target) {
         }
     }
     return null;
-
-
 }
 
-function showProfile(event) {
-    let target = getTarget(event.target);
+function showProfile(hover) {
+    try {
+        const target = getTarget(hover.target);
 
-    if (target && videoProfileCard.enable()) {
-        videoProfileCard.updateCursor(event.pageX, event.pageY);
+        if (!target || !videoProfileCard.enable()) {
+            videoProfileCard.checkTargetValid(hover.target);
+            return;
+        }
+
+        videoProfileCard.updateCursor(hover.pageX, hover.pageY);
         videoProfileCard.updateTarget(target);
-        getVideoId(target).then((vid) => {
-            if (vid) {
-                if (vid != videoProfileCard.videoId) {
-                    videoProfileCard.updateVideoId(vid);
-                    updateVideoInfo(vid, (data) => videoProfileCard.updateData(data));
-                }
-            } else {
-                videoProfileCard.disable();
-            }
-        })
-    } else {
-        videoProfileCard.checkTargetValid(event.target);
+
+        const vid = getVideoId(target);
+        if (!vid) {
+            videoProfileCard.disable();
+            return;
+        }
+        if (vid === videoProfileCard.videoId) {
+            return;
+        }
+
+        videoProfileCard.updateVideoId(vid);
+        // 滑到新视频时先掐掉上一个还在跑的请求
+        if (typeof cancelPendingRequest === "function") {
+            cancelPendingRequest();
+        }
+        updateVideoInfo(vid, (data) => videoProfileCard.updateData(data));
+    } catch (e) {
+        // 结构不认识时安静退场，别把整页的 mouseover 打断
+        videoProfileCard.disable();
     }
 }
 
+// 单个防抖定时器 + 一个全局 mouseout，避免每次悬停都往元素上堆监听器
+let hoverTimer = null;
+let hoverTarget = null;
+
+document.addEventListener("mouseout", (ev) => {
+    if (hoverTarget && (hoverTarget === ev.target || (hoverTarget.contains && hoverTarget.contains(ev.target)))) {
+        clearTimeout(hoverTimer);
+        hoverTimer = null;
+    }
+});
+
 function showProfileDebounce(event) {
-    clearTimeout(showProfileDebounce.timer);
-    event.target.addEventListener("mouseout", () => clearTimeout(showProfileDebounce.timer));
-    showProfileDebounce.timer = setTimeout(() => {
-        showProfile(event)
+    const target = event.target;
+    const pageX = event.pageX;
+    const pageY = event.pageY;
+
+    clearTimeout(hoverTimer);
+    hoverTarget = target;
+    hoverTimer = setTimeout(() => {
+        hoverTimer = null;
+        showProfile({ target: target, pageX: pageX, pageY: pageY });
     }, 200);
 }
