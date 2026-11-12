@@ -110,7 +110,7 @@ node --test tests/js/*.js
 
 `test_manifest.py` 看起来最不起眼，但它对应真实事故：MV3 里没声明 `host_permissions`，service worker 的 `fetch` 会被直接拦掉，而页面上毫无反应——插件「突然什么都不做」，却没有任何报错。
 
-CI（`.github/workflows/ci.yml`）在 Node 20/22、Python 3.10/3.12 上各跑一遍，外加一个只做静态校验的 manifest job。
+CI（`.github/workflows/ci.yml`）在 Node 22/24、Python 3.10/3.12 上各跑一遍，外加一个只做静态校验的 manifest job。
 
 **测不到的部分**：真实 B 站页面的悬停、真实 Key 的线上请求。这两件事仍需手动验：悬停一个有字幕的视频，确认卡片出结论且 `chrome.storage.local` 里出现 `bi:c:BVxxx:*`；刷新后再悬停同一视频，Network 里不该有新的 `chat/completions`。
 
