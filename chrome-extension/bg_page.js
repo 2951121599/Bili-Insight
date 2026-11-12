@@ -1,52 +1,310 @@
-chrome.runtime.onMessage.addListener(
-    function (text, sender, onSuccess) {
-        let data = JSON.parse(text)
+/*
+ * Bili Insight 后台 service worker
+ *
+ * 只负责两件事：
+ *   1. 代内容脚本抓字幕 JSON —— MV3 下 service worker 的跨域 fetch 受 host_permissions 约束
+ *   2. 用用户自己的 Key 调用 OpenAI 兼容接口，产出「值不值得看」的判断
+ *
+ * 不再经过任何第三方中转服务，Key 只存在本地 chrome.storage。
+ */
 
-        if (data.type === 'subtitleUrl') {
-            getSubtitleUrl(data, onSuccess)
-        }
-        if (data.type === 'summary') {
-            getSummary(data, onSuccess)
-        }
-        return true;  // Will respond asynchronously.
-    }
-);
+const DEFAULT_API_BASE = "https://api.deepseek.com";
+const DEFAULT_API_MODEL = "deepseek-flash";
+const REQUEST_TIMEOUT_MS = 45000;
+const MAX_TRANSCRIPT_CHARS = 60000;
 
-function getSubtitleUrl(data, onSuccess) {
-    fetch(data.url)
-        .then(response => response.json())
-        .then(responseText => onSuccess(responseText))
+const VERDICT_SYSTEM_PROMPT = `你是浏览器插件里的视频内容审稿编辑。用户把鼠标悬停在 B 站视频卡片上，只想知道一件事：这个视频值不值得花时间看。
 
+我会给你视频的标题、UP 主、分区、时长、互动数据和字幕全文。如果没有字幕，「字幕」一行会注明没有可用字幕。
+
+严格只输出一个 JSON 对象，不要 markdown 代码块，不要任何解释文字。字段如下：
+{
+  "verdict": "watch" 或 "skim" 或 "skip",
+  "score": 0 到 100 的整数，表示值得投入时间的程度,
+  "one_line": "30 字以内，一句话说清这视频讲了什么、值不值得看",
+  "points": ["2 到 4 条，每条 25 字以内，必须是视频里真正的信息点，不要复述标题"],
+  "signals": {
+    "density": "高 或 中 或 低，干货占比",
+    "audience": "20 字以内，最适合谁看",
+    "duplication": "20 字以内，同质化风险",
+    "cost": "20 字以内，时长与推荐观看方式"
+  }
 }
 
-function getSummary(data, onSuccess) {
+判定标准：
+- watch：信息密度高、有独特观点或一手材料，完整看完有收益
+- skim：有价值但注水明显，跳看要点或倍速即可
+- skip：标题党、纯搬运、与标题承诺不符，或内容在别处已经听过
 
-    chrome.storage.sync.get({
-        "enableWordCloud": true,
-        "apiKey": '',
-        minSize: 5
-    }, function (items) {
+只依据给定材料判断，不要编造视频里没出现的内容。如果没有字幕，只能依据标题、简介和分区做保守推断，并把 score 压低。`;
 
-        const url = 'https://yfor-bili-insight2.hf.space/run/predict'
-        // const url = 'http://127.0.0.1:7860/run/predict'
-        fetch(url, {
-            method: "POST", // or 'PUT'
+const OUTLINE_SYSTEM_PROMPT = `你是浏览器插件里的内容结构化助手。请把视频内容整理成适合 markmap 渲染的 Markdown 脑图大纲。
+
+要求：
+- 只输出 Markdown，不要代码块包裹，不要任何解释
+- 第一行是一级标题，格式为 "# 不超过 15 字的主旨"
+- 用无序列表 - 展开层级，最多三层
+- 一级节点不超过 5 个，总行数不超过 12 行
+- 每个节点是精简短语，不要完整句子，不要重复
+
+只依据给定材料，不要编造视频里没出现的内容。`;
+
+chrome.runtime.onMessage.addListener(function (raw, sender, onSuccess) {
+    let data;
+    try {
+        data = typeof raw === "string" ? JSON.parse(raw) : raw;
+    } catch (e) {
+        onSuccess({ summary: "", error: "消息格式错误" });
+        return true;
+    }
+
+    if (data.type === "subtitleUrl") {
+        getSubtitleUrl(data, onSuccess);
+    } else if (data.type === "summary") {
+        getSummary(data, onSuccess);
+    } else {
+        onSuccess({ summary: "", error: "未知请求类型" });
+    }
+    return true; // 异步响应
+});
+
+/* ---------------- 字幕 ---------------- */
+
+async function getSubtitleUrl(data, onSuccess) {
+    if (!data.url) {
+        onSuccess({ body: null });
+        return;
+    }
+    try {
+        const resp = await fetch(data.url);
+        if (!resp.ok) {
+            onSuccess({ body: null, error: `字幕请求失败 HTTP ${resp.status}` });
+            return;
+        }
+        onSuccess({ body: await resp.json() });
+    } catch (e) {
+        onSuccess({ body: null, error: String(e) });
+    }
+}
+
+/* ---------------- 总结 ---------------- */
+
+async function getSummary(data, onSuccess) {
+    let settings;
+    try {
+        settings = await loadSettings();
+    } catch (e) {
+        onSuccess({ summary: "", error: "读取设置失败" });
+        return;
+    }
+
+    if (!settings.apiKey) {
+        onSuccess({ summary: "", error: "未配置 API Key，点扩展图标填写后重试" });
+        return;
+    }
+
+    try {
+        if (data.method === "markmap") {
+            const outline = await callOutline(settings, data.payload);
+            onSuccess({ summary: outline });
+        } else {
+            onSuccess(await callVerdict(settings, data.payload));
+        }
+    } catch (e) {
+        onSuccess({ summary: "", error: (e && e.message) || String(e) });
+    }
+}
+
+function loadSettings() {
+    return new Promise((resolve) => {
+        chrome.storage.sync.get({
+            apiKey: "",
+            apiBase: DEFAULT_API_BASE,
+            apiModel: DEFAULT_API_MODEL,
+        }, (items) => resolve(items));
+    });
+}
+
+async function callVerdict(settings, payload) {
+    const raw = await callChat(
+        settings,
+        [
+            { role: "system", content: VERDICT_SYSTEM_PROMPT },
+            { role: "user", content: buildUserContent(payload) },
+        ],
+        { response_format: { type: "json_object" }, temperature: 0.3, max_tokens: 800 }
+    );
+
+    const parsed = parseJsonLoose(raw);
+    if (!parsed) {
+        throw new Error("模型输出无法解析为 JSON，可换个模型再试");
+    }
+    return normalizeVerdict(parsed, payload);
+}
+
+async function callOutline(settings, payload) {
+    const raw = await callChat(
+        settings,
+        [
+            { role: "system", content: OUTLINE_SYSTEM_PROMPT },
+            { role: "user", content: buildUserContent(payload) },
+        ],
+        { temperature: 0.3, max_tokens: 700 }
+    );
+    return stripCodeFence(raw);
+}
+
+/* ---------------- 通用调用 ---------------- */
+
+async function callChat(settings, messages, extra) {
+    const base = String(settings.apiBase || DEFAULT_API_BASE).replace(/\/+$/, "");
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+    try {
+        const resp = await fetch(`${base}/chat/completions`, {
+            method: "POST",
             headers: {
                 "Content-Type": "application/json",
+                "Authorization": `Bearer ${settings.apiKey}`,
             },
-            body: JSON.stringify({
-                "data": [
-                    data.text,
-                    items.apiKey ? items.apiKey : '',
-                    data.method ? data.method : '',
-                ]
-            }
-            )
-        })
-            .then(response => response.json())
-            .then(responseText => onSuccess({
-                "summary": responseText["data"][0]
-            }))
-    });
+            body: JSON.stringify(Object.assign({
+                model: settings.apiModel || DEFAULT_API_MODEL,
+                messages: messages,
+                stream: false,
+                // 悬停场景要低延迟，显式关掉思考模式（DeepSeek 默认是开启的）
+                thinking: { type: "disabled" },
+            }, extra || {})),
+            signal: controller.signal,
+        });
 
+        const text = await resp.text();
+        let json = null;
+        try {
+            json = JSON.parse(text);
+        } catch (e) {
+            // 保持 json 为 null，下面统一报错
+        }
+
+        if (!resp.ok) {
+            const detail = (json && json.error && (json.error.message || json.error)) || text.slice(0, 200);
+            throw new Error(friendlyError(resp.status, detail));
+        }
+        if (!json) {
+            throw new Error("接口返回的不是 JSON，请检查「接口地址」是否指向 OpenAI 兼容服务");
+        }
+
+        const choice = (json.choices || [])[0];
+        const content = choice && choice.message && choice.message.content;
+        if (!content) {
+            throw new Error("模型没有返回内容");
+        }
+        return content;
+    } catch (e) {
+        if (e.name === "AbortError") {
+            throw new Error("请求超时，稍后再试或换个更快的模型");
+        }
+        throw e;
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+function friendlyError(status, detail) {
+    if (status === 401 || status === 403) return "API Key 无效或没有权限，请检查插件设置";
+    if (status === 402) return "账户余额不足，请到模型平台充值";
+    if (status === 404) return "接口地址不存在，请检查「接口地址」是否填对";
+    if (status === 429) return "请求过于频繁，稍后再试";
+    if (status >= 500) return `模型服务异常（${status}），稍后再试`;
+    return detail ? `请求被拒绝（${status}）：${detail}` : `请求被拒绝（${status}）`;
+}
+
+/* ---------------- 数据结构 ---------------- */
+
+function buildUserContent(payload) {
+    const p = payload || {};
+    const stat = p.stat || {};
+    const lines = [];
+
+    lines.push(`【标题】${p.title || "（空）"}`);
+    if (p.owner) lines.push(`【UP 主】${p.owner}`);
+    if (p.tname) lines.push(`【分区】${p.tname}`);
+    lines.push(`【时长】${formatDuration(p.duration)}`);
+    if (p.pubdate) {
+        lines.push(`【发布】${new Date(p.pubdate * 1000).toISOString().slice(0, 10)}`);
+    }
+    lines.push(`【数据】播放 ${stat.view || 0} · 点赞 ${stat.like || 0} · 投币 ${stat.coin || 0} · 收藏 ${stat.favorite || 0} · 分享 ${stat.share || 0} · 评论 ${stat.reply || 0} · 弹幕 ${stat.danmaku || 0}`);
+    if (p.desc) lines.push(`【简介】${p.desc}`);
+
+    const transcript = String(p.transcript || "").slice(0, MAX_TRANSCRIPT_CHARS);
+    lines.push("");
+    lines.push(transcript ? `【字幕】\n${transcript}` : "【字幕】（本视频没有可用字幕）");
+    return lines.join("\n");
+}
+
+function normalizeVerdict(parsed, payload) {
+    let score = Number(parsed.score);
+    score = Number.isFinite(score) ? Math.max(0, Math.min(100, Math.round(score))) : 50;
+
+    let verdict = String(parsed.verdict || "").toLowerCase();
+    if (["watch", "skim", "skip"].indexOf(verdict) === -1) {
+        verdict = score >= 70 ? "watch" : score >= 40 ? "skim" : "skip";
+    }
+
+    const signals = parsed.signals || {};
+    const points = Array.isArray(parsed.points)
+        ? parsed.points.filter(Boolean).slice(0, 4).map((p) => String(p).trim())
+        : [];
+
+    return {
+        verdict: verdict,
+        score: score,
+        summary: String(parsed.one_line || parsed.summary || "").trim(),
+        points: points,
+        signals: {
+            density: String(signals.density || ""),
+            audience: String(signals.audience || ""),
+            duplication: String(signals.duplication || ""),
+            cost: String(signals.cost || ""),
+        },
+        caveat: String((payload && payload.transcript) || "").trim()
+            ? ""
+            : "无字幕 · 仅依据标题与简介推断",
+    };
+}
+
+function parseJsonLoose(text) {
+    const s = stripCodeFence(text);
+    try {
+        return JSON.parse(s);
+    } catch (e) {
+        const start = s.indexOf("{");
+        const end = s.lastIndexOf("}");
+        if (start !== -1 && end > start) {
+            try {
+                return JSON.parse(s.slice(start, end + 1));
+            } catch (e2) {
+                return null;
+            }
+        }
+        return null;
+    }
+}
+
+function stripCodeFence(text) {
+    let s = String(text || "").trim();
+    if (s.startsWith("```")) {
+        s = s.replace(/^```[a-zA-Z]*\s*/, "").replace(/```$/, "").trim();
+    }
+    return s;
+}
+
+function formatDuration(sec) {
+    const total = Number(sec) || 0;
+    const h = Math.floor(total / 3600);
+    const m = Math.floor((total % 3600) / 60);
+    const s = Math.floor(total % 60);
+    const mm = String(m).padStart(2, "0");
+    const ss = String(s).padStart(2, "0");
+    return h > 0 ? `${h}:${mm}:${ss}` : `${m}:${ss}`;
 }

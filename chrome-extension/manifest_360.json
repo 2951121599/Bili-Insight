@@ -1,6 +1,6 @@
 {
     "name": "Bili Insight - 借助GPT洞察B站视频内容",
-    "version": "0.3.2",
+    "version": "0.4.0",
     "manifest_version": 3,
     "description": "以卡片可视化形式，更快地了解视频的基本信息和总结内容。",
     "icons": {
@@ -21,6 +21,8 @@
                 "scripts/md5.js",
                 "scripts/stopwords.js",
                 "scripts/wordcloud2.min.js",
+                "scripts/d3@6.7.0.js",
+                "scripts/markmap-view@0.14.4.js",
                 "content-scripts/content.js"
             ],
             "css": [
@@ -41,6 +43,16 @@
     "author": "wangqmshf@hotmail.com",
     "permissions": [
         "storage"
+    ],
+    "host_permissions": [
+        "https://api.bilibili.com/*",
+        "https://*.hdslb.com/*",
+        "https://api.deepseek.com/*"
+    ],
+    "optional_host_permissions": [
+        "https://*/*",
+        "http://127.0.0.1/*",
+        "http://localhost/*"
     ],
     "background": {
         "service_worker": "bg_page.js"

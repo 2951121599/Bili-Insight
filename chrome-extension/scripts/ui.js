@@ -42,14 +42,75 @@ function secondsToDisplay(sec) {
     } else if (sec < 60 * 60) {
         return `${digitToStr(sec / 60)}:${digitToStr(sec % 60)}`;
     } else {
-        return `${digitToStr(sec / 60 / 60)}:${digitToStr(sec / 60) % 60}:${digitToStr(sec % 60)}`;
+        // 原来这里把「分钟数」当成（小时*60+分钟）再取模，62 分钟会显示成 01:2:00
+        const hours = Math.floor(sec / 3600);
+        const minutes = Math.floor((sec % 3600) / 60);
+        return `${hours}:${digitToStr(minutes)}:${digitToStr(sec % 60)}`;
     }
 }
 
 
 
+const VERDICT_META = {
+    watch: { label: "值得看", cls: "verdict-watch" },
+    skim: { label: "扫一眼", cls: "verdict-skim" },
+    skip: { label: "跳过", cls: "verdict-skip" },
+};
+
+const SIGNAL_LABELS = {
+    density: "密度",
+    audience: "适合",
+    duplication: "同质化",
+    cost: "成本",
+};
+
+function escapeHtml(value) {
+    const map = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+    return String(value === undefined || value === null ? "" : value)
+        .replace(/[&<>"']/g, (ch) => map[ch]);
+}
+
+// 「值不值得看」结论区。没有结论时只在有提示（如错误、无字幕）时占位
+function getVerdictHTML(data) {
+    const meta = VERDICT_META[data["verdict"]];
+    if (!meta) {
+        if (!data["caveat"]) {
+            return "";
+        }
+        return `
+            <div class="idc-verdict">
+                <div class="idc-caveat">${escapeHtml(data["caveat"])}</div>
+            </div>
+        `;
+    }
+
+    const score = typeof data["score"] === "number" ? data["score"] : "";
+    const points = (data["points"] || [])
+        .map((point) => `<li>${escapeHtml(point)}</li>`)
+        .join("");
+    const signals = data["signals"] || {};
+    const signalHTML = ["density", "audience", "duplication", "cost"]
+        .filter((key) => signals[key])
+        .map((key) => `<span class="idc-signal"><i>${SIGNAL_LABELS[key]}</i>${escapeHtml(signals[key])}</span>`)
+        .join("");
+
+    return `
+        <div class="idc-verdict">
+            <div class="idc-verdict-head">
+                <span class="idc-verdict-chip ${meta.cls}">${meta.label}</span>
+                ${score === "" ? "" : `<span class="idc-verdict-score">${score}</span>`}
+            </div>
+            ${data["summary"] ? `<div class="idc-verdict-line">${escapeHtml(data["summary"])}</div>` : ""}
+            ${points ? `<ul class="idc-points">${points}</ul>` : ""}
+            ${signalHTML ? `<div class="idc-signals">${signalHTML}</div>` : ""}
+            ${data["caveat"] ? `<div class="idc-caveat">${escapeHtml(data["caveat"])}</div>` : ""}
+        </div>
+    `;
+}
+
 function getVideoProfileCardDataHTML(data) {
     return `
+        ${getVerdictHTML(data)}
         <div class="idc-info clearfix">
 
             <div class="idc-content h">
@@ -65,11 +126,6 @@ function getVideoProfileCardDataHTML(data) {
                 </div>
             </div>
             <div id="tag-list-bi">
-            </div>
-            <div class="description" style="${data["summary"] ? "" : "display: none"}">
-                <span style="display: flex">
-                总结: ${data["summary"]}
-                </span>
             </div>
         </div>
     `
@@ -248,14 +304,21 @@ VideoProfileCard.prototype.updateData = function (data) {
         return;
     }
 
-    if (data["api"] == "info") {
-        this.data["like"] = d["data"]['like']
-        this.data["coin"] = d["data"]['coin']
-        this.data["favorite"] = d["data"]['favorite']
-        this.data["share"] = d["data"]['share']
-        this.data["pubdate"] = d["data"]['pubdate']
-        this.data["duration"] = d["data"]['duration']
-        this.data["summary"] = d["data"]["summary"];
+    if (data["api"] == "stats" || data["api"] == "info") {
+        const info = d["data"] || {};
+        for (const key of ["like", "coin", "favorite", "share", "pubdate", "duration"]) {
+            if (info[key] !== undefined) {
+                this.data[key] = info[key];
+            }
+        }
+        if (data["api"] == "info") {
+            this.data["verdict"] = info["verdict"] || "";
+            this.data["score"] = info["score"];
+            this.data["summary"] = info["summary"] || "";
+            this.data["points"] = info["points"] || [];
+            this.data["signals"] = info["signals"] || {};
+            this.data["caveat"] = info["caveat"] || "";
+        }
     } else if (data["api"] == "wordcloud") {
         this.data["wordcloud"] = d["word"];
         this.data["video_type"] = d["type"];
@@ -264,7 +327,7 @@ VideoProfileCard.prototype.updateData = function (data) {
     if (data["api"] == "wordcloud") {
         let canvas = document.getElementById("word-cloud-canvas-bi");
         if (this.data["wordcloud"].length > 0) {
-            canvas.style.height = `${canvas.offsetWidth / 2}px`;
+            canvas.style.height = "190px";
             canvas.width = canvas.offsetWidth;
             canvas.height = canvas.offsetHeight;
 
@@ -273,7 +336,8 @@ VideoProfileCard.prototype.updateData = function (data) {
             WordCloud(canvas, {
                 list: JSON.parse(JSON.stringify(this.data["wordcloud"])),
                 backgroundColor: "transparent",
-                weightFactor: 100 / this.wordCloudMaxCount(),
+                // 原来按 100/最大权重 放大，最大词能到 100px，会顶出 190px 的画布
+                weightFactor: 58 / this.wordCloudMaxCount(),
                 shrinkToFit: true,
                 minSize: biliInsightOptions.minSize
             });
@@ -282,8 +346,8 @@ VideoProfileCard.prototype.updateData = function (data) {
             canvas.style.height = "0px";
             canvas.height = 0;
         }
-    } else if (this.data['duration']) {
-        // if has duration
+    } else if (this.data['duration'] !== undefined) {
+        // 拿到互动数据就渲染，后续 info 事件会带着结论重绘
         document.getElementById("biliinsight-video-card-data-bi").innerHTML = getVideoProfileCardDataHTML(this.data);
         this.drawVideoTags();
     }

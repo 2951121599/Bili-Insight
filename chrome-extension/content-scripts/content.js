@@ -1,19 +1,15 @@
 document.addEventListener("mouseover", showProfileDebounce);
 document.addEventListener("mousemove", (ev) => videoProfileCard.updateCursor(ev.pageX, ev.pageY));
 
-biliInsightOptions = null;
-
-chrome.storage.sync.get({
-    enableWordCloud: true,
-    minSize: 5
-}, function (items) {
-    biliInsightOptions = items;
-});
-
+// 词云默认关掉：判断「值不值得看」用不上它，却会占掉卡片首屏
 biliInsightOptions = {
-    enableWordCloud: true,
+    enableWordCloud: false,
     minSize: 5
 }
+
+chrome.storage.sync.get(biliInsightOptions, function (items) {
+    biliInsightOptions = items;
+});
 
 function getVideoFromLink(url) {
     var vid = url.split("/")[4];

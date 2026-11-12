@@ -61,8 +61,10 @@ async function getVideo(bvid) {
             if (!video) {
                 return
             }
-            let subList = data["data"]["subtitle"]??["list"]
-            if (subList.length) {
+            // subtitle 字段在无字幕视频上可能整个缺失，也可能 list 为空
+            const subtitle = video["subtitle"];
+            const subList = (subtitle && subtitle["list"]) || [];
+            if (subList.length && subList[0]["subtitle_url"]) {
                 video.subtitleUrl = subList[0]["subtitle_url"];
             }
             return video;
@@ -131,11 +133,11 @@ function buildWordMap(map, video) {
 
 
     if (video["summary"]) {
-        updateWordMap(map, video["desc"], 1);
+        updateWordMap(map, video["desc"] || "", 1);
         updateWordMap(map, video["summary"], 1);
     } else {
-        updateWordMap(map, video["title"], 1);
-        updateWordMap(map, video["desc"], 1);
+        updateWordMap(map, video["title"] || "", 1);
+        updateWordMap(map, video["desc"] || "", 1);
     }
 
 
@@ -156,87 +158,9 @@ function updateVideoData(videoId, callback, videoData) {
     }
 }
 
-const readStream2Map = async (
-    reader,
-    status
-) => {
-    let partialLine = "";
-    var resp = "";
-    let markmapData = "";
-
-    while (true) {
-        // eslint-disable-next-line no-await-in-loop
-        const { value, done } = await reader.read();
-        if (done) break;
-        const decoder = new TextDecoder("utf-8");
-        const decodedText = decoder.decode(value, { stream: true });
-
-        if (status !== 200) {
-            const json = JSON.parse(decodedText); // start with "data: "
-            const content = json.error.message ?? decodedText;
-            //appendLastMessageContent(content);
-            questionInfo += content;
-            resp += content;
-            return;
-        }
-        console.log("decodedText:" + decodedText);
-        markmapData += decodedText;
-
-    }
-    console.log("resp:" + resp);
-    return markmapData
-};
-
-async function updateMapData(videoId, callback, videoData) {
-    // let markmapData = "";
-    // try {
-
-    //     const result = await fetch("http://127.0.0.1:8000", {
-    //         method: "post",
-    //         // signal: AbortSignal.timeout(8000),
-    //         // 开启后到达设定时间会中断流式输出
-    //         headers: {
-    //             "Content-Type": "application/json",
-    //         },
-    //         body: JSON.stringify({
-    //             model: "gpt-3.5-turbo",
-    //             text: videoData.summary
-    //         }),
-    //     });
-    //     const { body, status } = await result;
-    //     if (body) {
-    //         const reader = body.getReader();
-    //         // await readStream(reader, status);
-    //         markmapData = await readStream2Map(reader, status);
-    //     }
-    // } catch (error) {
-    //     console.error(error);
-    // } finally {
-    //     console.log("markmapData res:" + markmapData);
-    //     cacheAndUpdate(callback, videoId, "markmap", markmapData);
-    // }
-    chrome.runtime.sendMessage( //goes to bg_page.js
-        JSON.stringify({
-            type: 'summary',
-            text: videoData.transcript ? videoData.transcript : videoData.summary,
-            method: 'markmap',
-        }),
-        (data) => {
-            cacheAndUpdate(callback, videoId, "markmap", {
-                data: data.summary
-            })
-        } //your callback
-    );
-}
-
-
 function cacheValid(cache) {
-    for (let key of ["info", "wordcloud"]) {
-        if (!cache[key]) {
-            return false;
-        }
-    }
-    return true;
+    // 词云默认关闭，所以缓存只要求拿到结论；有词云时会一起回放
+    return !!cache["info"];
 }
 
 function cacheAndUpdate(callback, videoId, api, payload) {
@@ -251,108 +175,149 @@ function cacheAndUpdate(callback, videoId, api, payload) {
     callback({ "uid": videoId, "api": api, "payload": payload });
 }
 
-function updateVideoInfo(videoId, callback) {
-    this._prevVideoId = null;
+/*
+ * 组装给模型的结构化输入。
+ * 字幕为空时模型只拿到标题/简介/分区，会走保守推断的降级路径。
+ */
+function buildPayload(video) {
+    const stat = video["stat"] || {};
+    return {
+        title: video["title"] || "",
+        owner: (video["owner"] && video["owner"]["name"]) || "",
+        tname: video["tname"] || "",
+        desc: video["desc"] || "",
+        duration: video["duration"] || 0,
+        pubdate: video["pubdate"] || 0,
+        stat: {
+            view: stat["view"] || 0,
+            like: stat["like"] || 0,
+            coin: stat["coin"] || 0,
+            favorite: stat["favorite"] || 0,
+            share: stat["share"] || 0,
+            reply: stat["reply"] || 0,
+            danmaku: stat["danmaku"] || 0,
+        },
+        transcript: video["transcript"] || "",
+    };
+}
 
-    if (this._prevVideoId != videoId) {
-        if (userInfoCache.has(videoId) && cacheValid(userInfoCache.get(videoId))) {
-            let cache = userInfoCache.get(videoId);
-            for (let api in cache) {
-                callback({ "uid": videoId, "api": api, "payload": cache[api] });
-            }
-        } else {
+// 互动数据先渲染，不等模型，避免悬停后长时间空白
+function updateStats(videoId, callback, video) {
+    const stat = video["stat"] || {};
+    cacheAndUpdate(callback, videoId, "stats", {
+        data: {
+            like: stat["like"] || 0,
+            coin: stat["coin"] || 0,
+            favorite: stat["favorite"] || 0,
+            share: stat["share"] || 0,
+            pubdate: video["pubdate"] || 0,
+            duration: video["duration"] || 0,
+        }
+    });
+}
 
-            getVideo(videoId).then((video) => {
-                if (!video) {
-                    return
-                }
-                let subtitleUrl = video.subtitleUrl
-                if (subtitleUrl) {
-                    // 标题和描述
-                    // 云图
-                    updateUI(videoId, callback, video, false)
-                    chrome.runtime.sendMessage( //goes to bg_page.js
-                        JSON.stringify({
-                            type: 'subtitleUrl',
-                            url: subtitleUrl,
-                        }),
-                        (data) => {
-                            let rawSubTitles = data["body"]
-                            if (!rawSubTitles) {
-                                return
-                            }
-                            var rawTranscript = []
-                            rawSubTitles.forEach(element => {
-                                rawTranscript.push(element["content"])
-                            });
-                            let longText = rawTranscript.join("\n")
-                            video.transcript = longText
-                            updateUI(videoId, callback, video, true)
-
-                        } //your callback
-                    );
-
-                } else {
-                    // has not  subtitle
-                    updateUI(videoId, callback, video, true)
+function requestVerdict(videoId, callback, video) {
+    chrome.runtime.sendMessage( //goes to bg_page.js
+        JSON.stringify({
+            type: 'summary',
+            method: 'verdict',
+            payload: buildPayload(video),
+        }),
+        (data) => {
+            const resp = data || {};
+            cacheAndUpdate(callback, videoId, "info", {
+                data: {
+                    verdict: resp.verdict || "",
+                    score: resp.score,
+                    summary: resp.summary || "",
+                    points: resp.points || [],
+                    signals: resp.signals || {},
+                    caveat: resp.error ? resp.error : (resp.caveat || ""),
                 }
             })
-
-
-
+            video.summary = resp.summary || video["desc"] || "";
+            updateVideoData(videoId, callback, video);
         }
+    );
+}
+
+function updateMapData(videoId, callback, video) {
+    chrome.runtime.sendMessage( //goes to bg_page.js
+        JSON.stringify({
+            type: 'summary',
+            method: 'markmap',
+            payload: buildPayload(video),
+        }),
+        (data) => {
+            if (!data || !data.summary) {
+                return
+            }
+            cacheAndUpdate(callback, videoId, "markmap", {
+                data: data.summary
+            })
+        }
+    );
+}
+
+function normalizeSubtitleUrl(url) {
+    if (!url) {
+        return "";
     }
+    if (url.startsWith("//")) {
+        return `https:${url}`;
+    }
+    if (url.startsWith("/")) {
+        return `https://www.bilibili.com${url}`;
+    }
+    return url;
+}
+
+function updateVideoInfo(videoId, callback) {
+    if (userInfoCache.has(videoId) && cacheValid(userInfoCache.get(videoId))) {
+        let cache = userInfoCache.get(videoId);
+        for (let api in cache) {
+            callback({ "uid": videoId, "api": api, "payload": cache[api] });
+        }
+        return;
+    }
+
+    getVideo(videoId).then((video) => {
+        if (!video) {
+            return
+        }
+
+        // 先渲染互动数据，不等模型
+        updateStats(videoId, callback, video);
+
+        if (!video.subtitleUrl) {
+            // 无字幕：用标题 + 简介做轻量判断，卡片上会标注「无字幕」
+            updateUI(videoId, callback, video, false);
+            return
+        }
+
+        chrome.runtime.sendMessage( //goes to bg_page.js
+            JSON.stringify({
+                type: 'subtitleUrl',
+                url: normalizeSubtitleUrl(video.subtitleUrl),
+            }),
+            (data) => {
+                const body = data && data["body"];
+                if (Array.isArray(body) && body.length) {
+                    video.transcript = body
+                        .map((el) => el["content"] || "")
+                        .join("\n")
+                        .trim();
+                }
+                updateUI(videoId, callback, video, !!video.transcript);
+            } //your callback
+        );
+    })
 }
 
 
-function updateUI(videoId, callback, video, markMap) {
-    let videoData = video
-
-    if (video.transcript) {
-        chrome.runtime.sendMessage( //goes to bg_page.js
-            JSON.stringify({
-                type: 'summary',
-                text: video.transcript,
-            }),
-            (data) => {
-
-                cacheAndUpdate(callback, videoId, "info", {
-                    data: {
-                        "like": videoData["stat"]["like"],
-                        "coin": videoData["stat"]["coin"],
-                        "favorite": videoData["stat"]["favorite"],
-                        "share": videoData["stat"]["share"],
-                        "pubdate": videoData["pubdate"],
-                        "duration": videoData["duration"],
-                        "summary": data.summary
-                    }
-                })
-                videoData.summary = data.summary
-                updateVideoData(videoId, callback, videoData);
-
-            } //your callback
-        );
-        updateMapData(videoId, callback, videoData)
-    } else {
-        videoData.summary = videoData["desc"] ? videoData["desc"] : videoData["title"]
-        cacheAndUpdate(callback, videoId, "info", {
-            data: {
-                "like": videoData["stat"]["like"],
-                "coin": videoData["stat"]["coin"],
-                "favorite": videoData["stat"]["favorite"],
-                "share": videoData["stat"]["share"],
-                "pubdate": videoData["pubdate"],
-                "duration": videoData["duration"],
-                "summary": videoData.summary
-            }
-        })
-        updateVideoData(videoId, callback, videoData);
-        if (markMap) {
-            updateMapData(videoId, callback, videoData)
-        }
-
+function updateUI(videoId, callback, video, withMarkmap) {
+    requestVerdict(videoId, callback, video);
+    if (withMarkmap) {
+        updateMapData(videoId, callback, video);
     }
-
-
-
 }

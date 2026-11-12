@@ -1,6 +1,3 @@
-openai==0.27.7
-langchain==0.0.212
-fastapi==0.96.0
-uvicorn==0.22.0
-gradio==3.34.0
-bs4==0.0.1
+openai>=1.40
+fastapi>=0.110
+uvicorn>=0.29
