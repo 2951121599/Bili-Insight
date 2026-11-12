@@ -394,3 +394,68 @@ test("[21] 超长字幕保留结尾", () => {
     assert.match(clipped, /中间省略/);
     assert.equal(clipped.length < text.length, true);
 });
+
+/* ---------------- 字幕地址白名单（CWE-918） ---------------- */
+
+test("[22] 白名单覆盖 B 站真实字幕域名", () => {
+    // 这些是 normalizeSubtitleUrl 实际会产出的形态，误杀等于所有视频都「无字幕」
+    const allowed = [
+        "https://aisubtitle.hdslb.com/bfs/ai_subtitle/prod/123.json",
+        "https://i0.hdslb.com/bfs/subtitle/456.json",
+        "https://hdslb.com/x.json",
+        "https://www.bilibili.com/bfs/subtitle/789.json",
+        "https://api.bilibili.com/x/player/wbi/v2",
+    ];
+    for (const url of allowed) {
+        assert.equal(isAllowedSubtitleUrl(url), true, url);
+    }
+});
+
+test("[23] 后缀伪装、明文和内网地址一律拒绝", () => {
+    const rejected = [
+        "https://hdslb.com.evil.com/x.json",
+        "https://not-hdslb.com/x.json",
+        "https://evil.com/x.json",
+        "http://aisubtitle.hdslb.com/x.json",
+        "http://127.0.0.1:8080/x.json",
+        "http://169.254.169.254/latest/meta-data/",
+        "file:///etc/passwd",
+        "javascript:alert(1)",
+        "",
+        null,
+        undefined,
+        { url: "https://aisubtitle.hdslb.com/x.json" },
+    ];
+    for (const url of rejected) {
+        assert.equal(isAllowedSubtitleUrl(url), false, String(url));
+    }
+});
+
+test("[24] 非法字幕地址一个请求都不发", async () => {
+    const before = fetchCalls;
+    const r = await send({ type: "subtitleUrl", url: "https://evil.com/steal.json" });
+
+    assert.equal(fetchCalls, before, "非法地址必须挡在 fetch 之前");
+    assert.equal(r.body, null);
+    assert.match(r.error, /非法/);
+});
+
+test("[25] 合法字幕地址照常透传 body", async () => {
+    const before = fetchCalls;
+    queue = [
+        () => ({
+            ok: true,
+            status: 200,
+            headers: { get: () => null },
+            json: async () => ({ body: [{ content: "第一句", from: 0, to: 2 }] }),
+        }),
+    ];
+    const r = await send({
+        type: "subtitleUrl",
+        url: "https://aisubtitle.hdslb.com/bfs/ai_subtitle/prod/1.json",
+    });
+
+    assert.equal(fetchCalls - before, 1);
+    assert.equal(Array.isArray(r.body) && r.body.length, 1);
+    assert.equal(r.body[0].content, "第一句");
+});

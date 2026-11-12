@@ -131,6 +131,8 @@ async function getSubtitleUrl(data, onSuccess) {
         return;
     }
     if (!isAllowedSubtitleUrl(data.url)) {
+        // 白名单漏掉真实域名时表现是「所有视频都没字幕」，留个痕迹否则无从排查
+        console.warn("[bili-insight] 拒绝非白名单字幕地址:", data.url);
         onSuccess({ body: null, error: "非法的字幕地址" });
         return;
     }
