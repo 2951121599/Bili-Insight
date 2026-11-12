@@ -18,14 +18,20 @@ PAYLOAD = {
         "reply": 400,
         "danmaku": 900,
     },
-    "transcript": "今天我们测三款降噪耳机……" * 20,
+    # 字幕每行带 [mm:ss]，模型靠它给要点定位
+    "transcript": "[00:00] 今天我们测三款降噪耳机\n[02:15] A 款降噪最强但压耳\n[07:40] B 款人声通透\n[12:30] C 款性价比最高",
+    "subtitleKind": "human",
 }
 
 MODEL_JSON = {
     "verdict": "watch",
     "score": 82,
     "one_line": "三款降噪耳机的通勤实测，结论明确",
-    "points": ["A 款降噪最强但压耳", "B 款人声通透", "C 款性价比最高"],
+    "points": [
+        {"text": "A 款降噪最强但压耳", "at": 135},
+        {"text": "B 款人声通透", "at": 460},
+        {"text": "C 款性价比最高", "at": 750},
+    ],
     "signals": {"density": "高", "audience": "通勤党", "duplication": "低", "cost": "18 分钟"},
     "outline": "# 降噪耳机实测\n- 测试方法\n  - 地铁与办公室\n- 三款对比\n- 选购建议",
 }

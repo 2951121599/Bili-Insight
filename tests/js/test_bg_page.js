@@ -313,3 +313,84 @@ test("[13] 时长格式化", () => {
     assert.equal(formatDuration(1080), "18:00");
     assert.equal(formatDuration(3720), "1:02:00");
 });
+
+/* ---------------- 要点的时间戳 ---------------- */
+
+test("[14] 要点带 at 时原样保留，超出时长要夹住", () => {
+    const points = normalizePoints(
+        [
+            { text: "开头就讲结论", at: 0 },
+            { text: "实测对比", at: 135 },
+            { text: "模型算飞了", at: 99999 },
+        ],
+        600
+    );
+
+    assert.deepEqual(points, [
+        { text: "开头就讲结论", at: 0 },
+        { text: "实测对比", at: 135 },
+        { text: "模型算飞了", at: 600 },
+    ]);
+});
+
+test("[15] 老格式字符串要点也能兼容", () => {
+    assert.deepEqual(normalizePoints(["纯字符串要点"], 600), [{ text: "纯字符串要点", at: null }]);
+});
+
+test("[16] 字符串里带 [mm:ss] 前缀会被抽成 at", () => {
+    assert.deepEqual(normalizePoints(["[12:30] C 款性价比最高"], 1080), [
+        { text: "C 款性价比最高", at: 750 },
+    ]);
+    // 超过一小时的写法也算对
+    assert.deepEqual(normalizePoints(["[1:02:00] 收尾总结"], 7200), [
+        { text: "收尾总结", at: 3720 },
+    ]);
+});
+
+test("[17] 没有 at 就不该伪造时间戳", () => {
+    assert.deepEqual(normalizePoints([{ text: "没有秒数" }], 600), [{ text: "没有秒数", at: null }]);
+    assert.deepEqual(normalizePoints([{ text: "零值也要保留", at: 0 }], 600), [
+        { text: "零值也要保留", at: 0 },
+    ]);
+    assert.deepEqual(normalizePoints("not-an-array", 600), []);
+});
+
+test("[18] 模型给了超过 4 条要点只留前 4 条", () => {
+    const points = normalizePoints(
+        Array.from({ length: 9 }, (_, i) => ({ text: `要点${i}`, at: i * 10 })),
+        600
+    );
+    assert.equal(points.length, 4);
+});
+
+test("[19] 提示词要求时间戳，且字幕按类型说明", () => {
+    assert.match(VERDICT_SYSTEM_PROMPT, /\[mm:ss\]/, "提示词必须告诉模型字幕行首有时间戳");
+    assert.match(VERDICT_SYSTEM_PROMPT, /"at"/, "提示词必须要求 at 字段");
+
+    const aiText = buildUserContent({ title: "t", transcript: "[00:00] 一句", subtitleKind: "ai" });
+    assert.match(aiText, /AI 识别字幕/, "AI 字幕要提示可能有同音错字");
+
+    const humanText = buildUserContent({ title: "t", transcript: "[00:00] 一句", subtitleKind: "human" });
+    assert.match(humanText, /人工校对字幕/);
+    assert.doesNotMatch(humanText, /AI 识别/);
+});
+
+test("[20] AI 字幕的结论要带 caveat", () => {
+    const result = normalizeVerdict({ verdict: "watch", score: 80 }, {
+        title: "t",
+        duration: 600,
+        transcript: "[00:00] 一句",
+        subtitleKind: "ai",
+    });
+    assert.equal(result.caveat, "AI 字幕 · 识别可能有错字");
+});
+
+test("[21] 超长字幕保留结尾", () => {
+    const text = "开".repeat(50000) + "尾".repeat(50000);
+    const clipped = clipTranscript(text, 1000);
+
+    assert.ok(clipped.startsWith("开"), "首段要保留");
+    assert.ok(clipped.endsWith("尾"), "结论通常在结尾，不能砍掉");
+    assert.match(clipped, /中间省略/);
+    assert.equal(clipped.length < text.length, true);
+});

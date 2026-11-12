@@ -25,19 +25,22 @@ log = logging.getLogger(__name__)
 
 DEFAULT_BASE_URL = "https://api.deepseek.com"
 DEFAULT_MODEL = "deepseek-flash"
-MAX_TRANSCRIPT_CHARS = 60000
+# 字幕每行现在带 [mm:ss] 前缀，同样的时长会比以前长一截，所以额度上调
+MAX_TRANSCRIPT_CHARS = 80000
 VERDICT_ORDER = ("watch", "skim", "skip")
 
-VERDICT_SYSTEM_PROMPT = """你是浏览器插件里的视频内容审稿编辑。用户把鼠标悬停在 B 站视频卡片上，只想知道一件事：这个视频值不值得花时间看。
+VERDICT_SYSTEM_PROMPT = """你是浏览器插件里的视频内容审稿编辑。用户把鼠标悬停在 B 站视频卡片上，只想知道一件事：这个视频值不值得花时间看，以及从第几分钟开始看。
 
-我会给你视频的标题、UP 主、分区、时长、互动数据和字幕全文。如果没有字幕，「字幕」一行会注明没有可用字幕。
+我会给你视频的标题、UP 主、分区、时长、互动数据和字幕全文。字幕每一行开头都有 [mm:ss]，表示这句话出现在视频的第几分第几秒。如果没有字幕，「字幕」一行会注明没有可用字幕。
 
 严格只输出一个 JSON 对象，不要 markdown 代码块，不要任何解释文字。字段如下：
 {
   "verdict": "watch" 或 "skim" 或 "skip",
   "score": 0 到 100 的整数，表示值得投入时间的程度,
   "one_line": "30 字以内，一句话说清这视频讲了什么、值不值得看",
-  "points": ["2 到 4 条，每条 25 字以内，必须是视频里真正的信息点，不要复述标题"],
+  "points": [
+    {"text": "25 字以内，视频里真正的信息点，不要复述标题", "at": 该信息点开始出现的秒数}
+  ],
   "signals": {
     "density": "高 或 中 或 低，干货占比",
     "audience": "20 字以内，最适合谁看",
@@ -46,6 +49,12 @@ VERDICT_SYSTEM_PROMPT = """你是浏览器插件里的视频内容审稿编辑�
   },
   "outline": "6 到 12 行 Markdown 脑图，行之间用 \\n 分隔；第一行是 # 加 15 字以内主旨；下面每条以 - 开头，用两个空格缩进表示层级，最多三层；每条是精简短语，不要完整句子"
 }
+
+关于 points 和 at，这几条很严格，因为用户会点着 at 跳转：
+- points 给 2 到 4 条，每条 25 字以内，必须是视频里真正讲到的信息点
+- at 是整数秒数，必须来自【字幕】行首的 [mm:ss]，把 mm 乘 60 再加上 ss
+- at 要指向该信息点「开始讲」的那一句，不要指向标题出现的时刻，也不要靠感觉估
+- 没有字幕时，points 里不要输出 at 字段
 
 判定标准：
 - watch：信息密度高、有独特观点或一手材料，完整看完有收益
@@ -134,10 +143,26 @@ def _format_pubdate(timestamp) -> str:
         return ""
 
 
+def _clip_transcript(text: str, limit: int = MAX_TRANSCRIPT_CHARS) -> str:
+    """超长字幕保留首尾，而不是砍掉结尾。
+
+    原来是 slice(0, limit)：一小时以上的访谈、直播回放，前半段还在铺垫，
+    「所以结论是」全在被砍掉的最后几分钟里。改成首 70% + 尾 30%，
+    中间标注省略了多少，模型至少知道结尾讲了什么。
+    """
+    text = text or ""
+    if len(text) <= limit:
+        return text
+    head = limit * 7 // 10
+    tail = limit - head
+    omitted = len(text) - limit
+    return f"{text[:head]}\n…（中间省略 {omitted} 个字符）…\n{text[-tail:]}"
+
+
 def build_user_content(payload) -> str:
     """把结构化 payload 拼成模型输入；也兼容传纯文本的旧用法。"""
     if isinstance(payload, str):
-        return f"【字幕】\n{payload[:MAX_TRANSCRIPT_CHARS]}"
+        return f"【字幕】\n{_clip_transcript(payload)}"
 
     p = payload or {}
     stat = p.get("stat") or {}
@@ -167,8 +192,16 @@ def build_user_content(payload) -> str:
         lines.append(f"【简介】{p['desc']}")
 
     lines.append("")
-    transcript = str(p.get("transcript") or "")[:MAX_TRANSCRIPT_CHARS]
-    lines.append(f"【字幕】\n{transcript}" if transcript else "【字幕】（本视频没有可用字幕）")
+    transcript = _clip_transcript(str(p.get("transcript") or ""))
+    kind = str(p.get("subtitleKind") or "")
+    if transcript:
+        if kind == "ai":
+            lines.append("【字幕类型】B 站 AI 识别字幕，可能有同音错字，遇到明显不通的地方按上下文理解")
+        elif kind == "human":
+            lines.append("【字幕类型】UP 主上传或人工校对字幕")
+        lines.append(f"【字幕】\n{transcript}")
+    else:
+        lines.append("【字幕】（本视频没有可用字幕）")
     return "\n".join(lines)
 
 
@@ -209,6 +242,61 @@ def _normalize_outline(value) -> str:
     return "\n".join(lines[:12])
 
 
+_CLOCK_PREFIX = re.compile(r"^\s*\[(\d{1,2}):(\d{2})(?::(\d{2}))?\]\s*")
+_DEFAULT_DURATION_LIMIT = 86400
+
+
+def _parse_clock(text: str):
+    """从 '[12:30] xxx' 里取出秒数，取不到返回 None。"""
+    match = _CLOCK_PREFIX.match(text or "")
+    if not match:
+        return None
+    first, second, third = match.groups()
+    if third is None:
+        return int(first) * 60 + int(second)
+    return int(first) * 3600 + int(second) * 60 + int(third)
+
+
+def _normalize_points(raw, duration) -> list:
+    """把 points 统一成 [{text, at}]，at 是秒数或 None。
+
+    模型可能给纯字符串（老格式），也可能给 {text, at}。
+    字符串里带 [mm:ss] 前缀时顺手抽出来，正文里去掉前缀，避免和时间戳重复。
+    at 会夹到视频时长内——模型偶尔会算出超过时长的秒数，点过去是空进度。
+    """
+    if not isinstance(raw, list):
+        return []
+    try:
+        limit = int(duration or 0)
+    except (TypeError, ValueError):
+        limit = 0
+    if limit <= 0:
+        limit = _DEFAULT_DURATION_LIMIT
+
+    points = []
+    for item in raw:
+        at = None
+        if isinstance(item, dict):
+            text = str(item.get("text") or item.get("point") or "").strip()
+            try:
+                at = int(round(float(item.get("at"))))
+            except (TypeError, ValueError):
+                at = None
+        else:
+            text = str(item or "").strip()
+        if not text:
+            continue
+        if at is None:
+            at = _parse_clock(text)
+        if at is None:
+            points.append({"text": text, "at": None})
+        else:
+            points.append({"text": _CLOCK_PREFIX.sub("", text).strip(), "at": max(0, min(limit, at))})
+        if len(points) == 4:
+            break
+    return points
+
+
 def _normalize_verdict(parsed: dict, payload) -> dict:
     try:
         score = int(round(float(parsed.get("score", 50))))
@@ -221,18 +309,23 @@ def _normalize_verdict(parsed: dict, payload) -> dict:
         verdict = "watch" if score >= 70 else "skim" if score >= 40 else "skip"
 
     signals = parsed.get("signals") or {}
-    points = parsed.get("points") or []
-    if not isinstance(points, list):
-        points = []
+    duration = (payload or {}).get("duration") if isinstance(payload, dict) else 0
 
     has_transcript = bool(str((payload or {}).get("transcript") or "").strip()) if isinstance(payload, dict) else bool(payload)
+    kind = str((payload or {}).get("subtitleKind") or "") if isinstance(payload, dict) else ""
+    if not has_transcript:
+        caveat = "无字幕 · 仅依据标题与简介推断"
+    elif kind == "ai":
+        caveat = "AI 字幕 · 识别可能有错字"
+    else:
+        caveat = ""
 
     return {
         "verdict": verdict,
         "score": score,
         "summary": str(parsed.get("one_line") or parsed.get("summary") or "").strip(),
         "one_line": str(parsed.get("one_line") or parsed.get("summary") or "").strip(),
-        "points": [str(p).strip() for p in points if str(p).strip()][:4],
+        "points": _normalize_points(parsed.get("points"), duration),
         "signals": {
             "density": str(signals.get("density") or ""),
             "audience": str(signals.get("audience") or ""),
@@ -240,7 +333,7 @@ def _normalize_verdict(parsed: dict, payload) -> dict:
             "cost": str(signals.get("cost") or ""),
         },
         "outline": _normalize_outline(parsed.get("outline")),
-        "caveat": "" if has_transcript else "无字幕 · 仅依据标题与简介推断",
+        "caveat": caveat,
     }
 
 

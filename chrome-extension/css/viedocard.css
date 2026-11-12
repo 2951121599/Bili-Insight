@@ -170,6 +170,37 @@
     background: #c9ccd0;
 }
 
+/* 有时间戳的要点，前面的小圆点是多余的 */
+#biliinsight-video-card .idc-points li.has-time {
+    padding-left: 0;
+}
+
+#biliinsight-video-card .idc-points li.has-time::before {
+    display: none;
+}
+
+/* 要点前面的时间戳：做成按钮，点一下跳到视频对应进度 */
+#biliinsight-video-card .idc-point-time {
+    display: inline-block;
+    margin-right: 6px;
+    padding: 0 4px;
+    font-family: inherit;
+    font-size: 11px;
+    line-height: 16px;
+    font-variant-numeric: tabular-nums;
+    color: #00a1d6;
+    background: rgba(0, 161, 214, 0.08);
+    border: 0;
+    border-radius: 3px;
+    cursor: pointer;
+    vertical-align: 1px;
+}
+
+#biliinsight-video-card .idc-point-time:hover {
+    color: #fff;
+    background: #00a1d6;
+}
+
 #biliinsight-video-card .idc-signals {
     display: flex;
     flex-wrap: wrap;

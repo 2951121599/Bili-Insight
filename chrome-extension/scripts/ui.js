@@ -5,6 +5,21 @@ function numberToDisplay(number) {
     return number;
 }
 
+/*
+ * 秒 -> mm:ss，秒数为 0 也要正常显示成 00:00。
+ * secondsToDisplay 对 0 返回数字 0（当空值处理），用在时长上没问题，
+ * 用在时间戳上会渲染出裸的「0」。
+ */
+function secondsToClock(sec) {
+    const total = Math.max(0, Math.floor(Number(sec) || 0));
+    const hours = Math.floor(total / 3600);
+    const minutes = Math.floor((total % 3600) / 60);
+    const secs = total % 60;
+    const mm = String(minutes).padStart(2, "0");
+    const ss = String(secs).padStart(2, "0");
+    return hours > 0 ? `${hours}:${mm}:${ss}` : `${mm}:${ss}`;
+}
+
 function timestampToDisplay(timestamp) {
     if (timestamp == null) {
         return ""
@@ -70,6 +85,21 @@ function escapeHtml(value) {
         .replace(/[&<>"']/g, (ch) => map[ch]);
 }
 
+/*
+ * 要点兼容两种形状：老缓存的纯字符串，和新版的 {text, at}。
+ * at 是秒数时渲染成可点的时间戳，点一下跳到视频对应进度。
+ */
+function renderPoint(point) {
+    const text = typeof point === "object" && point !== null ? point["text"] : point;
+    const at = typeof point === "object" && point !== null ? point["at"] : null;
+    const body = escapeHtml(text);
+    if (typeof at !== "number" || !isFinite(at)) {
+        return `<li>${body}</li>`;
+    }
+    const clock = secondsToClock(at);
+    return `<li class="has-time"><button type="button" class="idc-point-time" data-at="${Math.floor(at)}" title="从这个位置开始看">${clock}</button>${body}</li>`;
+}
+
 // 「值不值得看」结论区。没有结论时只在有提示（如错误、无字幕）时占位
 function getVerdictHTML(data) {
     const meta = VERDICT_META[data["verdict"]];
@@ -85,9 +115,7 @@ function getVerdictHTML(data) {
     }
 
     const score = typeof data["score"] === "number" ? data["score"] : "";
-    const points = (data["points"] || [])
-        .map((point) => `<li>${escapeHtml(point)}</li>`)
-        .join("");
+    const points = (data["points"] || []).map(renderPoint).join("");
     const signals = data["signals"] || {};
     const signalHTML = ["density", "audience", "duplication", "cost"]
         .filter((key) => signals[key])
@@ -157,6 +185,9 @@ function VideoProfileCard() {
     this.target = null;
     this.enabled = false;
     this.wordCloud = null;
+    // 指针是否落在卡片本身上（点时间戳时不能让它消失）
+    this.hovering = false;
+    this.hideTimer = null;
     this.el = document.createElement("div");
     this.el.style.position = "absolute";
     this.el.style.display = "none";
@@ -164,6 +195,29 @@ function VideoProfileCard() {
     this.el.addEventListener("transitionend", () => {
         this.updateCursor(this.cursorX, this.cursorY);
     })
+
+    /*
+     * 卡片本身不能被鼠标「穿透」掉。
+     * 原来只有悬停目标是视频卡时才保持展开，指针一移到卡片上就 disable，
+     * 于是要点上的时间戳永远点不到。现在进入卡片就锁定，离开后再延时收起。
+     */
+    this.el.addEventListener("mouseenter", () => {
+        this.hovering = true;
+        clearTimeout(this.hideTimer);
+    });
+    this.el.addEventListener("mouseleave", () => {
+        this.hovering = false;
+        this.scheduleHide();
+    });
+    this.el.addEventListener("click", (ev) => {
+        const chip = ev.target && ev.target.closest ? ev.target.closest(".idc-point-time") : null;
+        if (!chip) {
+            return;
+        }
+        ev.preventDefault();
+        ev.stopPropagation();
+        this.jumpTo(Number(chip.getAttribute("data-at")));
+    });
 
     this.idCardObserver = new MutationObserver((mutationList, observer) => {
         this.clearOriginalCard();
@@ -180,6 +234,8 @@ VideoProfileCard.prototype.disable = function () {
     this.data = {};
     // 置空 target，配合 updateTarget 的去重判断，下次悬停能重新挂上 mouseleave
     this.target = null;
+    this.hovering = false;
+    clearTimeout(this.hideTimer);
     // 卡片收了就把还在跑的模型请求一起取消，别为滑走的视频继续计费
     if (typeof cancelPendingRequest === "function") {
         cancelPendingRequest();
@@ -274,6 +330,63 @@ VideoProfileCard.prototype.updateCursor = function (cursorX, cursorY) {
     }
 }
 
+/*
+ * 收起卡片前留一点缓冲。
+ * 从视频卡移到卡片上时，mouseleave 先于 mouseenter 触发，
+ * 立刻 disable 会让指针还没落到卡片上它就没了。
+ */
+VideoProfileCard.prototype.scheduleHide = function () {
+    clearTimeout(this.hideTimer);
+    this.hideTimer = setTimeout(() => {
+        if (!this.hovering) {
+            this.disable();
+        }
+    }, 180);
+};
+
+function currentPageBvid() {
+    if (typeof location === "undefined" || !location) {
+        return "";
+    }
+    const match = String(location.pathname || "").match(/\/video\/(BV[0-9A-Za-z]+)/);
+    return match ? match[1] : "";
+}
+
+/*
+ * 跳到要点对应的进度。
+ * 如果当前就在这个视频的播放页，直接 seek 播放器（不用重新加载页面）；
+ * 否则新标签打开带 ?t= 的地址。
+ */
+VideoProfileCard.prototype.jumpTo = function (seconds) {
+    const at = Math.max(0, Math.floor(Number(seconds) || 0));
+    const bvid = this.videoId && String(this.videoId).indexOf("BV") === 0 ? String(this.videoId) : "";
+    if (!bvid) {
+        return;
+    }
+
+    if (currentPageBvid() === bvid && typeof document.querySelector === "function") {
+        const player = document.querySelector("video");
+        if (player && typeof player.currentTime === "number") {
+            try {
+                player.currentTime = at;
+                if (typeof player.play === "function") {
+                    player.play();
+                }
+                if (typeof window !== "undefined" && typeof window.scrollTo === "function") {
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                }
+                return;
+            } catch (e) {
+                // 播放器不配合就退回新标签打开
+            }
+        }
+    }
+
+    if (typeof window !== "undefined" && typeof window.open === "function") {
+        window.open(`https://www.bilibili.com/video/${bvid}?t=${at}`, "_blank", "noopener");
+    }
+};
+
 VideoProfileCard.prototype.updateTarget = function (target) {
     // 同一张卡片上反复 mouseover 时不再重复挂 mouseleave，否则监听器会越堆越多
     if (this.target === target) {
@@ -282,7 +395,7 @@ VideoProfileCard.prototype.updateTarget = function (target) {
     this.target = target;
     let vpc = this
     this.target.addEventListener("mouseleave", function leaveHandle(ev) {
-        vpc.disable();
+        vpc.scheduleHide();
         this.removeEventListener("mouseleave", leaveHandle);
     })
 }
