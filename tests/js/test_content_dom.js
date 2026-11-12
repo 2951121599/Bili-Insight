@@ -226,3 +226,38 @@ test("[14] 指针在自己的卡片里时不当成滑走", () => {
         delete card.contains;
     }
 });
+
+/* ---------------- 脑图 svg 的定位方式 ---------------- */
+
+test("[15] 卡片模板给脑图 svg 留了 id，不再靠 class 顺序取", () => {
+    const html = getVideoProfileCardHTML({});
+    assert.match(html, /id="biliinsight-markmap-svg"/);
+    assert.match(html, /class="markmap markmap-wrapper"/, "外层容器的 class 不能动，CSS 依赖它");
+});
+
+test("[16] markmapSvg 只在自己卡片子树内按 id 查", () => {
+    const card = videoProfileCard.el;
+    const fakeSvg = makeEl("SVG");
+    const seen = [];
+    const saved = card.querySelector;
+    card.querySelector = (selector) => {
+        seen.push(String(selector));
+        return String(selector) === "#biliinsight-markmap-svg" ? fakeSvg : null;
+    };
+    try {
+        assert.equal(videoProfileCard.markmapSvg(), fakeSvg);
+        assert.deepEqual(seen, ["#biliinsight-markmap-svg"], "应该只按 id 查一次，不退回 class 选择器");
+    } finally {
+        card.querySelector = saved;
+    }
+});
+
+test("[17] 卡片元素还没建好时安静返回 null", () => {
+    const savedEl = videoProfileCard.el;
+    try {
+        videoProfileCard.el = null;
+        assert.equal(videoProfileCard.markmapSvg(), null);
+    } finally {
+        videoProfileCard.el = savedEl;
+    }
+});

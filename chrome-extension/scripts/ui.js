@@ -170,7 +170,7 @@ function getVideoProfileCardHTML(data) {
                 <canvas id="word-cloud-canvas-bi" style="width: 100%; height: 0"></canvas>
             </div>
             <div class="markmap markmap-wrapper">
-                <svg class="markmap">
+                <svg class="markmap" id="biliinsight-markmap-svg">
                 </svg>
             </div>
         </div>
@@ -228,6 +228,17 @@ function VideoProfileCard() {
     document.body.appendChild(this.el);
 }
 
+/*
+ * 卡片里的脑图 <svg>。
+ * 原来用 getElementsByClassName('markmap')[1] 按文档顺序取第二个匹配，
+ * B 站页面任何一处出现同名 class 就会整体错位，取到 null 再往下走就是白屏。
+ * 现在模板里给了 id，这里只在卡片自身子树内查，页面怎么变都不会错。
+ */
+VideoProfileCard.prototype.markmapSvg = function () {
+    return this.el ? this.el.querySelector("#biliinsight-markmap-svg") : null;
+}
+
+
 VideoProfileCard.prototype.disable = function () {
     this.videoId = null;
     this.enabled = false;
@@ -247,7 +258,7 @@ VideoProfileCard.prototype.disable = function () {
             canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
             canvas.parentNode.classList.remove("canvas-show");
         }
-        let svgEl = document.getElementsByClassName('markmap')[1];
+        let svgEl = this.markmapSvg();
         if (svgEl) {
             svgEl.parentNode.classList.remove("canvas-show");
         }
@@ -475,31 +486,33 @@ VideoProfileCard.prototype.updateData = function (data) {
         this.drawVideoTags();
     }
     if (data["api"] == "markmap") {
-        let svgEl = document.getElementsByClassName('markmap')[1]
-        if (!this.mm) {
-            this.mm = markmap.Markmap.create(svgEl);
-        }
+        let svgEl = this.markmapSvg();
+        // 取不到 svg 就静默跳过，别让 Markmap.create(null) 把整次渲染打断
+        if (svgEl) {
+            if (!this.mm) {
+                this.mm = markmap.Markmap.create(svgEl);
+            }
 
-        let markMapConfig = `---
+            let markMapConfig = `---
 markmap:
 colorFreezeLevel: 2
 maxWidth: 300
 embedAssets: true
 ---\n`
-        let markmapContext = data.payload.data
-        if (markmapContext && data.payload.data.split('\n').length > 12) {
-            markmapContext = data.payload.data.split('\n').slice(0, 12).join('\n')
-        }
-        if (!markmapContext) {
-            return
-        }
-        let { root } = new markmap.Transformer().transform(markMapConfig + markmapContext);
-        if (root.children) {
-            this.mm.setData(root);
-            this.mm.fit();
-            svgEl.parentNode.classList.add("canvas-show");
-        } else {
-            svgEl.parentNode.classList.remove("canvas-show");
+            let markmapContext = data.payload.data
+            if (markmapContext && data.payload.data.split('\n').length > 12) {
+                markmapContext = data.payload.data.split('\n').slice(0, 12).join('\n')
+            }
+            if (markmapContext) {
+                let { root } = new markmap.Transformer().transform(markMapConfig + markmapContext);
+                if (root.children) {
+                    this.mm.setData(root);
+                    this.mm.fit();
+                    svgEl.parentNode.classList.add("canvas-show");
+                } else {
+                    svgEl.parentNode.classList.remove("canvas-show");
+                }
+            }
         }
     }
 
