@@ -178,6 +178,12 @@ VideoProfileCard.prototype.disable = function () {
     this.videoId = null;
     this.enabled = false;
     this.data = {};
+    // 置空 target，配合 updateTarget 的去重判断，下次悬停能重新挂上 mouseleave
+    this.target = null;
+    // 卡片收了就把还在跑的模型请求一起取消，别为滑走的视频继续计费
+    if (typeof cancelPendingRequest === "function") {
+        cancelPendingRequest();
+    }
     if (this.el) {
         this.el.style.display = "none";
         let canvas = document.getElementById("word-cloud-canvas-bi");
@@ -269,6 +275,10 @@ VideoProfileCard.prototype.updateCursor = function (cursorX, cursorY) {
 }
 
 VideoProfileCard.prototype.updateTarget = function (target) {
+    // 同一张卡片上反复 mouseover 时不再重复挂 mouseleave，否则监听器会越堆越多
+    if (this.target === target) {
+        return;
+    }
     this.target = target;
     let vpc = this
     this.target.addEventListener("mouseleave", function leaveHandle(ev) {

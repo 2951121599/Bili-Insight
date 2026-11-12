@@ -1,9 +1,10 @@
 /*
  * Bili Insight 后台 service worker
  *
- * 只负责两件事：
+ * 只负责三件事：
  *   1. 代内容脚本抓字幕 JSON —— MV3 下 service worker 的跨域 fetch 受 host_permissions 约束
- *   2. 用用户自己的 Key 调用 OpenAI 兼容接口，产出「值不值得看」的判断
+ *   2. 用用户自己的 Key 调用 OpenAI 兼容接口，一次调用同时产出结论与脑图大纲
+ *   3. 把结论按 bvid + 模型缓存到 chrome.storage.local，重复悬停不再付第二遍钱
  *
  * 不再经过任何第三方中转服务，Key 只存在本地 chrome.storage。
  */
@@ -12,6 +13,17 @@ const DEFAULT_API_BASE = "https://api.deepseek.com";
 const DEFAULT_API_MODEL = "deepseek-flash";
 const REQUEST_TIMEOUT_MS = 45000;
 const MAX_TRANSCRIPT_CHARS = 60000;
+
+// 提示词改了就加一，旧缓存自动失效
+const PROMPT_VERSION = 2;
+const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const CACHE_MAX_ENTRIES = 300;
+const CACHE_PREFIX = "bi:c:";
+const CACHE_INDEX_KEY = "bi:c:index";
+
+// 429 / 5xx 值得重试，其余状态码重试只是浪费时间
+const RETRY_STATUS = [429, 500, 502, 503, 504];
+const MAX_RETRIES = 2;
 
 const VERDICT_SYSTEM_PROMPT = `你是浏览器插件里的视频内容审稿编辑。用户把鼠标悬停在 B 站视频卡片上，只想知道一件事：这个视频值不值得花时间看。
 
@@ -28,7 +40,8 @@ const VERDICT_SYSTEM_PROMPT = `你是浏览器插件里的视频内容审稿编�
     "audience": "20 字以内，最适合谁看",
     "duplication": "20 字以内，同质化风险",
     "cost": "20 字以内，时长与推荐观看方式"
-  }
+  },
+  "outline": "6 到 12 行 Markdown 脑图，行之间用 \\n 分隔；第一行是 # 加 15 字以内主旨；下面每条以 - 开头，用两个空格缩进表示层级，最多三层；每条是精简短语，不要完整句子"
 }
 
 判定标准：
@@ -38,6 +51,7 @@ const VERDICT_SYSTEM_PROMPT = `你是浏览器插件里的视频内容审稿编�
 
 只依据给定材料判断，不要编造视频里没出现的内容。如果没有字幕，只能依据标题、简介和分区做保守推断，并把 score 压低。`;
 
+// 仅用于兼容旧版内容脚本单独请求大纲
 const OUTLINE_SYSTEM_PROMPT = `你是浏览器插件里的内容结构化助手。请把视频内容整理成适合 markmap 渲染的 Markdown 脑图大纲。
 
 要求：
@@ -48,6 +62,9 @@ const OUTLINE_SYSTEM_PROMPT = `你是浏览器插件里的内容结构化助手�
 - 每个节点是精简短语，不要完整句子，不要重复
 
 只依据给定材料，不要编造视频里没出现的内容。`;
+
+// requestId -> AbortController，内容脚本滑走时可以真的把请求掐掉
+const activeRequests = new Map();
 
 chrome.runtime.onMessage.addListener(function (raw, sender, onSuccess) {
     let data;
@@ -62,11 +79,28 @@ chrome.runtime.onMessage.addListener(function (raw, sender, onSuccess) {
         getSubtitleUrl(data, onSuccess);
     } else if (data.type === "summary") {
         getSummary(data, onSuccess);
+    } else if (data.type === "abort") {
+        abortRequest(data.requestId);
+        onSuccess({ canceled: true });
     } else {
         onSuccess({ summary: "", error: "未知请求类型" });
     }
     return true; // 异步响应
 });
+
+function abortRequest(requestId) {
+    const controller = requestId && activeRequests.get(requestId);
+    if (controller) {
+        activeRequests.delete(requestId);
+        // signal.reason 在旧内核上可能拿不到，用自有标记兜底
+        controller.__canceled = true;
+        try {
+            controller.abort("cancel");
+        } catch (e) {
+            // 已经结束的请求，忽略
+        }
+    }
+}
 
 /* ---------------- 字幕 ---------------- */
 
@@ -105,11 +139,25 @@ async function getSummary(data, onSuccess) {
 
     try {
         if (data.method === "markmap") {
-            const outline = await callOutline(settings, data.payload);
+            const outline = await callOutline(settings, data.payload, data.requestId);
             onSuccess({ summary: outline });
-        } else {
-            onSuccess(await callVerdict(settings, data.payload));
+            return;
         }
+
+        const cacheKey = data.videoId ? buildCacheKey(data.videoId, settings) : "";
+        if (cacheKey) {
+            const cached = await readCache(cacheKey);
+            if (cached) {
+                onSuccess(cached);
+                return;
+            }
+        }
+
+        const result = await callVerdict(settings, data.payload, data.requestId);
+        if (!result.canceled && cacheKey) {
+            writeCache(cacheKey, result);
+        }
+        onSuccess(result);
     } catch (e) {
         onSuccess({ summary: "", error: (e && e.message) || String(e) });
     }
@@ -125,15 +173,20 @@ function loadSettings() {
     });
 }
 
-async function callVerdict(settings, payload) {
+async function callVerdict(settings, payload, requestId) {
     const raw = await callChat(
         settings,
         [
             { role: "system", content: VERDICT_SYSTEM_PROMPT },
             { role: "user", content: buildUserContent(payload) },
         ],
-        { response_format: { type: "json_object" }, temperature: 0.3, max_tokens: 800 }
+        { response_format: { type: "json_object" }, temperature: 0.3, max_tokens: 1200 },
+        requestId
     );
+
+    if (raw === CANCELED) {
+        return { canceled: true, summary: "" };
+    }
 
     const parsed = parseJsonLoose(raw);
     if (!parsed) {
@@ -142,72 +195,216 @@ async function callVerdict(settings, payload) {
     return normalizeVerdict(parsed, payload);
 }
 
-async function callOutline(settings, payload) {
+async function callOutline(settings, payload, requestId) {
     const raw = await callChat(
         settings,
         [
             { role: "system", content: OUTLINE_SYSTEM_PROMPT },
             { role: "user", content: buildUserContent(payload) },
         ],
-        { temperature: 0.3, max_tokens: 700 }
+        { temperature: 0.3, max_tokens: 700 },
+        requestId
     );
-    return stripCodeFence(raw);
+    return raw === CANCELED ? "" : stripCodeFence(raw);
+}
+
+/* ---------------- 结果缓存 ---------------- */
+
+function buildCacheKey(videoId, settings) {
+    const model = String(settings.apiModel || DEFAULT_API_MODEL).trim();
+    return `${CACHE_PREFIX}${videoId}:${model}:${PROMPT_VERSION}`;
+}
+
+function readCache(key) {
+    return new Promise((resolve) => {
+        chrome.storage.local.get([key, CACHE_INDEX_KEY], (items) => {
+            const entry = items && items[key];
+            if (!entry || entry.v !== PROMPT_VERSION || !entry.data) {
+                resolve(null);
+                return;
+            }
+            if (Date.now() - (entry.t || 0) > CACHE_TTL_MS) {
+                chrome.storage.local.remove(key);
+                resolve(null);
+                return;
+            }
+            resolve(Object.assign({}, entry.data, { cached: true }));
+        });
+    });
+}
+
+function writeCache(key, value) {
+    return new Promise((resolve) => {
+        const now = Date.now();
+        chrome.storage.local.get(CACHE_INDEX_KEY, (items) => {
+            const stored = items && items[CACHE_INDEX_KEY];
+            const index = Array.isArray(stored) ? stored : [];
+            // 顺手淘汰过期项和同名旧项
+            const next = index.filter((row) => row && row[0] !== key && now - (row[1] || 0) <= CACHE_TTL_MS);
+            next.push([key, now]);
+            const dropped = next.length > CACHE_MAX_ENTRIES
+                ? next.splice(0, next.length - CACHE_MAX_ENTRIES)
+                : [];
+
+            const patch = {};
+            patch[key] = { v: PROMPT_VERSION, t: now, data: value };
+            patch[CACHE_INDEX_KEY] = next;
+
+            chrome.storage.local.set(patch, () => {
+                if (!dropped.length) {
+                    resolve();
+                    return;
+                }
+                chrome.storage.local.remove(dropped.map((row) => row[0]), () => resolve());
+            });
+        });
+    });
 }
 
 /* ---------------- 通用调用 ---------------- */
 
-async function callChat(settings, messages, extra) {
+const CANCELED = "__canceled__";
+
+async function callChat(settings, messages, extra, requestId) {
     const base = String(settings.apiBase || DEFAULT_API_BASE).replace(/\/+$/, "");
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    if (requestId) {
+        activeRequests.set(requestId, controller);
+    }
+    const timer = setTimeout(() => {
+        try {
+            controller.abort("timeout");
+        } catch (e) {
+            // 忽略
+        }
+    }, REQUEST_TIMEOUT_MS);
+
+    const body = JSON.stringify(Object.assign({
+        model: settings.apiModel || DEFAULT_API_MODEL,
+        messages: messages,
+        stream: false,
+        // 悬停场景要低延迟，显式关掉思考模式（DeepSeek 默认是开启的）
+        thinking: { type: "disabled" },
+    }, extra || {}));
 
     try {
-        const resp = await fetch(`${base}/chat/completions`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${settings.apiKey}`,
-            },
-            body: JSON.stringify(Object.assign({
-                model: settings.apiModel || DEFAULT_API_MODEL,
-                messages: messages,
-                stream: false,
-                // 悬停场景要低延迟，显式关掉思考模式（DeepSeek 默认是开启的）
-                thinking: { type: "disabled" },
-            }, extra || {})),
-            signal: controller.signal,
-        });
+        let lastStatus = 0;
+        let lastDetail = "";
 
-        const text = await resp.text();
-        let json = null;
-        try {
-            json = JSON.parse(text);
-        } catch (e) {
-            // 保持 json 为 null，下面统一报错
+        for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+            let resp;
+            let text;
+            try {
+                resp = await fetch(`${base}/chat/completions`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${settings.apiKey}`,
+                    },
+                    body: body,
+                    signal: controller.signal,
+                });
+                text = await resp.text();
+            } catch (e) {
+                if (isAbort(e)) {
+                    return abortOutcome(controller);
+                }
+                if (attempt >= MAX_RETRIES) {
+                    throw new Error("网络请求失败，请检查网络或「接口地址」是否可达");
+                }
+                await sleep(backoffDelay(attempt), controller);
+                continue;
+            }
+
+            if (resp.ok) {
+                return extractContent(text);
+            }
+
+            lastStatus = resp.status;
+            lastDetail = errorDetail(text);
+            if (RETRY_STATUS.indexOf(resp.status) === -1 || attempt >= MAX_RETRIES) {
+                throw new Error(friendlyError(lastStatus, lastDetail));
+            }
+            await sleep(retryDelay(resp, attempt), controller);
         }
 
-        if (!resp.ok) {
-            const detail = (json && json.error && (json.error.message || json.error)) || text.slice(0, 200);
-            throw new Error(friendlyError(resp.status, detail));
-        }
-        if (!json) {
-            throw new Error("接口返回的不是 JSON，请检查「接口地址」是否指向 OpenAI 兼容服务");
-        }
-
-        const choice = (json.choices || [])[0];
-        const content = choice && choice.message && choice.message.content;
-        if (!content) {
-            throw new Error("模型没有返回内容");
-        }
-        return content;
-    } catch (e) {
-        if (e.name === "AbortError") {
-            throw new Error("请求超时，稍后再试或换个更快的模型");
-        }
-        throw e;
+        throw new Error(friendlyError(lastStatus || 0, lastDetail));
     } finally {
         clearTimeout(timer);
+        if (requestId) {
+            activeRequests.delete(requestId);
+        }
     }
+}
+
+function isAbort(err) {
+    return !!err && (err.name === "AbortError" || err.code === 20);
+}
+
+function abortOutcome(controller) {
+    if (controller.__canceled || controller.signal.reason === "cancel") {
+        return CANCELED;
+    }
+    throw new Error("请求超时，稍后再试或换个更快的模型");
+}
+
+function backoffDelay(attempt) {
+    // 600ms、1200ms，加一点抖动避免多标签页同时重试
+    return 600 * Math.pow(2, attempt) + Math.floor(Math.random() * 250);
+}
+
+function retryDelay(resp, attempt) {
+    const header = resp.headers && resp.headers.get && resp.headers.get("Retry-After");
+    const seconds = Number(header);
+    if (Number.isFinite(seconds) && seconds > 0) {
+        // 服务端要求的等待时间最多认 5 秒，否则悬停体验会崩
+        return Math.min(seconds * 1000, 5000);
+    }
+    return backoffDelay(attempt);
+}
+
+function sleep(ms, controller) {
+    // 等待期间被取消就直接返回，让下一轮 fetch 抛 AbortError 走统一出口
+    return new Promise((resolve) => {
+        const timer = setTimeout(resolve, ms);
+        if (controller && controller.signal) {
+            controller.signal.addEventListener("abort", () => {
+                clearTimeout(timer);
+                resolve();
+            }, { once: true });
+        }
+    });
+}
+
+function extractContent(text) {
+    let json = null;
+    try {
+        json = JSON.parse(text);
+    } catch (e) {
+        // 保持 null，下面统一报错
+    }
+    if (!json) {
+        throw new Error("接口返回的不是 JSON，请检查「接口地址」是否指向 OpenAI 兼容服务");
+    }
+    const choice = (json.choices || [])[0];
+    const content = choice && choice.message && choice.message.content;
+    if (!content) {
+        throw new Error("模型没有返回内容");
+    }
+    return content;
+}
+
+function errorDetail(text) {
+    try {
+        const json = JSON.parse(text);
+        const err = json && json.error;
+        if (err) {
+            return String(err.message || err).slice(0, 200);
+        }
+    } catch (e) {
+        // 不是 JSON，退回纯文本
+    }
+    return String(text || "").slice(0, 200);
 }
 
 function friendlyError(status, detail) {
@@ -267,10 +464,25 @@ function normalizeVerdict(parsed, payload) {
             duplication: String(signals.duplication || ""),
             cost: String(signals.cost || ""),
         },
+        outline: normalizeOutline(parsed.outline),
         caveat: String((payload && payload.transcript) || "").trim()
             ? ""
             : "无字幕 · 仅依据标题与简介推断",
     };
+}
+
+function normalizeOutline(value) {
+    let text = Array.isArray(value) ? value.join("\n") : String(value || "");
+    text = stripCodeFence(text).trim();
+    if (!text) {
+        return "";
+    }
+    let lines = text.split("\n").filter((line) => line.trim());
+    // markmap 需要一级标题当根节点，模型漏了就补一个
+    if (lines[0].indexOf("#") !== 0) {
+        lines.unshift("# 内容大纲");
+    }
+    return lines.slice(0, 12).join("\n");
 }
 
 function parseJsonLoose(text) {

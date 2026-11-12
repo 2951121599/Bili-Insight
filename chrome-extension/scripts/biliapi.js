@@ -74,6 +74,43 @@ async function getVideo(bvid) {
 
 userInfoCache = new Map();
 
+// 当前在跑的模型请求；悬停滑走时用它把请求掐掉，省一次 token
+let activeRequest = null;
+// bvid -> [callback]，同一个视频还在算时，后来的悬停挂上去等结果
+const pendingByVideo = new Map();
+
+function nextRequestId() {
+    return `r${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function cancelPendingRequest() {
+    if (!activeRequest) {
+        return;
+    }
+    const requestId = activeRequest.requestId;
+    const videoId = activeRequest.videoId;
+    activeRequest = null;
+    pendingByVideo.delete(videoId);
+    try {
+        chrome.runtime.sendMessage(JSON.stringify({ type: "abort", requestId }), () => {
+            // 读一下 lastError，避免控制台刷 "Unchecked runtime.lastError"
+            void chrome.runtime.lastError;
+        });
+    } catch (e) {
+        // service worker 不在，忽略
+    }
+}
+
+function emit(callbacks, videoId, api, payload) {
+    for (const callback of callbacks) {
+        try {
+            cacheAndUpdate(callback, videoId, api, payload);
+        } catch (e) {
+            // 单个回调出错不影响其它状态
+        }
+    }
+}
+
 function updateWordMap(map, sentence, weight) {
     // Remove all URLs
     sentence = sentence.replace(/(?:https?|ftp):\/\/[\n\S]+/g, '');
@@ -146,16 +183,16 @@ function buildWordMap(map, video) {
 
 }
 
-function updateVideoData(videoId, callback, videoData) {
+function updateVideoData(videoId, callbacks, videoData) {
+    if (!biliInsightOptions.enableWordCloud) {
+        return;
+    }
     let map = new Map();
     map.set("word", new Map());
     map.set("type", new Map());
 
-
     buildWordMap(map, videoData)
-    if (biliInsightOptions.enableWordCloud) {
-        cacheAndUpdate(callback, videoId, "wordcloud", convertVideoData(map));
-    }
+    emit(callbacks, videoId, "wordcloud", convertVideoData(map));
 }
 
 function cacheValid(cache) {
@@ -202,9 +239,9 @@ function buildPayload(video) {
 }
 
 // 互动数据先渲染，不等模型，避免悬停后长时间空白
-function updateStats(videoId, callback, video) {
+function updateStats(videoId, callbacks, video) {
     const stat = video["stat"] || {};
-    cacheAndUpdate(callback, videoId, "stats", {
+    emit(callbacks, videoId, "stats", {
         data: {
             like: stat["like"] || 0,
             coin: stat["coin"] || 0,
@@ -216,45 +253,62 @@ function updateStats(videoId, callback, video) {
     });
 }
 
-function requestVerdict(videoId, callback, video) {
-    chrome.runtime.sendMessage( //goes to bg_page.js
-        JSON.stringify({
-            type: 'summary',
-            method: 'verdict',
-            payload: buildPayload(video),
-        }),
-        (data) => {
-            const resp = data || {};
-            cacheAndUpdate(callback, videoId, "info", {
-                data: {
-                    verdict: resp.verdict || "",
-                    score: resp.score,
-                    summary: resp.summary || "",
-                    points: resp.points || [],
-                    signals: resp.signals || {},
-                    caveat: resp.error ? resp.error : (resp.caveat || ""),
-                }
-            })
-            video.summary = resp.summary || video["desc"] || "";
-            updateVideoData(videoId, callback, video);
-        }
-    );
-}
+/*
+ * 结论与脑图大纲现在由同一次调用产出。
+ * 原来是 requestVerdict + updateMapData 两次请求，同一份字幕发了两次，
+ * 首屏多等一个来回，token 也翻倍。
+ */
+function requestVerdict(videoId, callbacks, video, withOutline) {
+    const requestId = nextRequestId();
+    activeRequest = { requestId, videoId };
 
-function updateMapData(videoId, callback, video) {
-    chrome.runtime.sendMessage( //goes to bg_page.js
+    const finish = (resp) => {
+        if (activeRequest && activeRequest.requestId === requestId) {
+            activeRequest = null;
+        }
+        if (pendingByVideo.get(videoId) === callbacks) {
+            pendingByVideo.delete(videoId);
+        }
+
+        const result = resp || {};
+        // 被取消的请求直接丢弃，卡片已经滑到别的视频了
+        if (result.canceled) {
+            return;
+        }
+
+        emit(callbacks, videoId, "info", {
+            data: {
+                verdict: result.verdict || "",
+                score: result.score,
+                summary: result.summary || "",
+                points: result.points || [],
+                signals: result.signals || {},
+                caveat: result.error ? result.error : (result.caveat || ""),
+            }
+        });
+
+        if (withOutline && result.outline) {
+            emit(callbacks, videoId, "markmap", { data: result.outline });
+        }
+
+        video.summary = result.summary || video["desc"] || "";
+        updateVideoData(videoId, callbacks, video);
+    };
+
+    chrome.runtime.sendMessage(
         JSON.stringify({
-            type: 'summary',
-            method: 'markmap',
+            type: "summary",
+            method: "verdict",
+            requestId: requestId,
+            videoId: videoId,
             payload: buildPayload(video),
         }),
         (data) => {
-            if (!data || !data.summary) {
-                return
+            if (chrome.runtime.lastError) {
+                finish({ error: "后台未响应，刷新页面后重试" });
+                return;
             }
-            cacheAndUpdate(callback, videoId, "markmap", {
-                data: data.summary
-            })
+            finish(data);
         }
     );
 }
@@ -281,17 +335,32 @@ function updateVideoInfo(videoId, callback) {
         return;
     }
 
+    // 从 A 滑到 B：把 A 还在跑的请求掐掉，不为没在看的视频付钱
+    if (activeRequest && activeRequest.videoId !== videoId) {
+        cancelPendingRequest();
+    }
+
+    // 同一个视频还在算的时候又悬停回来，挂上去等结果，别重复发请求
+    if (pendingByVideo.has(videoId)) {
+        pendingByVideo.get(videoId).push(callback);
+        return;
+    }
+
+    const callbacks = [callback];
+    pendingByVideo.set(videoId, callbacks);
+
     getVideo(videoId).then((video) => {
         if (!video) {
+            pendingByVideo.delete(videoId);
             return
         }
 
         // 先渲染互动数据，不等模型
-        updateStats(videoId, callback, video);
+        updateStats(videoId, callbacks, video);
 
         if (!video.subtitleUrl) {
             // 无字幕：用标题 + 简介做轻量判断，卡片上会标注「无字幕」
-            updateUI(videoId, callback, video, false);
+            updateUI(videoId, callbacks, video, false);
             return
         }
 
@@ -301,6 +370,10 @@ function updateVideoInfo(videoId, callback) {
                 url: normalizeSubtitleUrl(video.subtitleUrl),
             }),
             (data) => {
+                if (chrome.runtime.lastError) {
+                    pendingByVideo.delete(videoId);
+                    return;
+                }
                 const body = data && data["body"];
                 if (Array.isArray(body) && body.length) {
                     video.transcript = body
@@ -308,16 +381,15 @@ function updateVideoInfo(videoId, callback) {
                         .join("\n")
                         .trim();
                 }
-                updateUI(videoId, callback, video, !!video.transcript);
+                updateUI(videoId, callbacks, video, !!video.transcript);
             } //your callback
         );
+    }).catch(() => {
+        pendingByVideo.delete(videoId);
     })
 }
 
 
-function updateUI(videoId, callback, video, withMarkmap) {
-    requestVerdict(videoId, callback, video);
-    if (withMarkmap) {
-        updateMapData(videoId, callback, video);
-    }
+function updateUI(videoId, callbacks, video, withOutline) {
+    requestVerdict(videoId, callbacks, video, withOutline);
 }
